@@ -19,7 +19,7 @@ import os
 import re
 
 import cv2
-from skimage.util import img_as_float
+# from skimage.util import img_as_float
 import numpy as np
 import pandas as pd
 from dataset.data_loader.BaseLoader import BaseLoader

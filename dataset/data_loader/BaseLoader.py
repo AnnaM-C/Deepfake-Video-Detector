@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset
 from tqdm import tqdm
-from retinaface import RetinaFace   # Source code: https://github.com/serengil/retinaface
+# from retinaface import RetinaFace   # Source code: https://github.com/serengil/retinaface
 
 
 class BaseLoader(Dataset):

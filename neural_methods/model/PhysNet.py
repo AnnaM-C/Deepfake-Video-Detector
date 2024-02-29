@@ -15,10 +15,11 @@ import pdb
 import torch
 import torch.nn as nn
 from torch.nn.modules.utils import _triple
+import torch.nn.functional as F
 
 
 class PhysNet_padding_Encoder_Decoder_MAX(nn.Module):
-    def __init__(self, frames=128):
+    def __init__(self, frames=32):
         super(PhysNet_padding_Encoder_Decoder_MAX, self).__init__()
 
         self.ConvBlock1 = nn.Sequential(
@@ -89,6 +90,13 @@ class PhysNet_padding_Encoder_Decoder_MAX(nn.Module):
 
         # self.poolspa = nn.AdaptiveMaxPool3d((frames,1,1))    # pool only spatial space
         self.poolspa = nn.AdaptiveAvgPool3d((frames, 1, 1))
+        
+        self.flatten = nn.Flatten()
+
+        # output of poolspa layer is [batch_size, 64, frames, 1, 1]
+        # flatten to [batch_size, frames]
+        self.fc1 = nn.Linear(32, 16)
+        self.fc2 = nn.Linear(16, 2)
 
     def forward(self, x):  # Batch_size*[3, T, 128,128]
         x_visual = x
@@ -119,6 +127,11 @@ class PhysNet_padding_Encoder_Decoder_MAX(nn.Module):
         x = self.poolspa(x)
         x = self.ConvBlock10(x)  # x [1, T, 1,1]
 
-        rPPG = x.view(-1, length)
+        # rPPG = x.view(-1, length)
+        x = self.flatten(x)  # Flatten to [batch_size, 1 * frames * 1 * 1]
 
-        return rPPG, x_visual, x_visual3232, x_visual1616
+        # MLP layers
+        x = F.relu(self.fc1(x))  # Apply ReLU activation function
+        x = self.fc2(x)
+        # return rPPG
+        return x

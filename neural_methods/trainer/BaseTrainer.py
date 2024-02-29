@@ -106,3 +106,27 @@ class BaseTrainer:
         plt.close()
 
         print('Saving plots of losses and learning rates to:', output_dir)
+
+    def save_test_metrics(self, test_acc, roc, config):
+        output_dir = config.TEST.OUTPUT_SAVE_DIR
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir, exist_ok=True)
+        
+        # Filename ID to be used in any output files that get saved
+        if config.TOOLBOX_MODE == 'train_and_test':
+            filename_id = self.model_file_name
+        elif config.TOOLBOX_MODE == 'only_test':
+            model_file_root = config.INFERENCE.MODEL_PATH.split("/")[-1].split(".pth")[0]
+            filename_id = model_file_root + "_" + config.TEST.DATA.DATASET
+        else:
+            raise ValueError('Metrics.py evaluation only supports train_and_test and only_test!')
+        output_path = os.path.join(output_dir, filename_id + '_outputs.pickle')
+
+        data = dict()
+        data['test_acc'] = test_acc
+        data['roc'] = roc
+
+        with open(output_path, 'wb') as handle: # save out frame dict pickle file
+            pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+        print('Saving outputs to:', output_path)

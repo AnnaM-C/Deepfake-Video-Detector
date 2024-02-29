@@ -2,9 +2,9 @@ BASE: ['']
 TOOLBOX_MODE: "train_and_test"      # "train_and_test"  or "only_test"
 TRAIN:
   BATCH_SIZE: 4
-  EPOCHS: 30
-  LR: 9e-3
-  MODEL_FILE_NAME: SCAMPS_SCAMPS_PURE_physnet
+  EPOCHS: 80
+  LR: 0.00001 # 9e-3
+  MODEL_FILE_NAME: Face2Face_physnet_shuffle_false_val_SGD_00001_LR_reducer_full_dset
   PLOT_LOSSES_AND_LR: True
   DATA:
     FS: 30
@@ -20,7 +20,7 @@ TRAIN:
       DATA_TYPE: ['DiffNormalized']         #if use physnet, should be DiffNormalized
       LABEL_TYPE: DiffNormalized
       DO_CHUNK: True
-      CHUNK_LENGTH: 128                 #only support for factor of 512
+      CHUNK_LENGTH: 32                 #only support for factor of 512
       CROP_FACE:
         DO_CROP_FACE: True
         BACKEND: 'HC'    # HC for Haar Cascade, RF for RetinaFace
@@ -48,7 +48,7 @@ VALID:
       DATA_TYPE: ['DiffNormalized']         #if use physnet, should be DiffNormalized
       LABEL_TYPE: DiffNormalized
       DO_CHUNK: True
-      CHUNK_LENGTH: 128                 #only support for factor of 512
+      CHUNK_LENGTH: 32                 #only support for factor of 512
       CROP_FACE:
         DO_CROP_FACE: True
         BACKEND: 'HC'    # HC for Haar Cascade, RF for RetinaFace
@@ -63,7 +63,7 @@ VALID:
         W: 72
 TEST:
   METRICS: ['MAE', 'RMSE', 'MAPE', 'Pearson', 'SNR', 'BA']
-  USE_LAST_EPOCH: True                     # to use provided validation dataset to find the best epoch, should be false
+  USE_LAST_EPOCH: False                     # to use provided validation dataset to find the best epoch, should be false
   DATA:
     FS: 30
     DATASET: PURE
@@ -78,7 +78,7 @@ TEST:
       DATA_TYPE: ['DiffNormalized']         #if use physnet, should be DiffNormalized
       LABEL_TYPE: DiffNormalized
       DO_CHUNK: True
-      CHUNK_LENGTH: 128                 #only support for factor of 512
+      CHUNK_LENGTH: 32                 #only support for factor of 512
       CROP_FACE:
         DO_CROP_FACE: True
         BACKEND: 'HC'    # HC for Haar Cascade, RF for RetinaFace
@@ -99,7 +99,7 @@ MODEL:
   DROP_RATE: 0.2
   NAME: Physnet
   PHYSNET:
-    FRAME_NUM: 128
+    FRAME_NUM: 32
 INFERENCE:
   BATCH_SIZE: 4
   EVALUATION_METHOD: "FFT"        # "FFT" or "peak detection"
