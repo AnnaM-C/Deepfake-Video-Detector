@@ -8,17 +8,17 @@ import glob
 import numpy as np
 import re
 
-from scipy.__config__ import get_info
+# from scipy.__config__ import get_info
 from .BaseLoader import BaseLoader
 from multiprocessing import Pool, Process, Value, Array, Manager
 from tqdm import tqdm
 import pandas as pd
-import scipy.io as sio
+# import scipy.io as sio
 import sys
 import itertools
 from warnings import simplefilter
 # from dataset.data_loader.process_tool import *
-from scipy.signal import butter, filtfilt
+# from scipy.signal import butter, filtfilt
 
 simplefilter(action='ignore', category=FutureWarning)
 

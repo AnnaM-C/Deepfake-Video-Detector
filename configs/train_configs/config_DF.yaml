@@ -1,0 +1,33 @@
+TRAIN:
+  EPOCHS: 50 # 25
+  DATA:
+    REAL_DATA:
+      DATASET: youtube
+      ROOT_PATH: "/vol/research/DeepFakeDet/notebooks/FaceForensics++/original_sequences/youtube/c23/frames"
+      SPLITS_FILE: "/vol/research/DeepFakeDet/notebooks/FaceForensics++/original_sequences/youtube/c23/train10.txt"
+    FAKE_DATA:
+      DATASET: NeuralTextures # as it appears as folder name
+      ROOT_PATH: "/vol/research/DeepFakeDet/notebooks/FaceForensics++/manipulated_sequences/NeuralTextures/c23/frames"                     # Raw dataset path, need to be updated
+      SPLITS_FILE: "/vol/research/DeepFakeDet/notebooks/FaceForensics++/manipulated_sequences/NeuralTextures/c23/train10.txt"
+
+VALID:
+  DATA:
+    REAL_DATA:
+      DATASET: youtube
+      ROOT_PATH: "/vol/research/DeepFakeDet/notebooks/FaceForensics++/original_sequences/youtube/c23/frames"
+      SPLITS_FILE: "/vol/research/DeepFakeDet/notebooks/FaceForensics++/original_sequences/youtube/c23/val10.txt"
+    FAKE_DATA:
+      DATASET: NeuralTextures # as it appears as folder name
+      ROOT_PATH: "/vol/research/DeepFakeDet/notebooks/FaceForensics++/manipulated_sequences/NeuralTextures/c23/frames"                     # Raw dataset path, need to be updated
+      SPLITS_FILE: "/vol/research/DeepFakeDet/notebooks/FaceForensics++/manipulated_sequences/NeuralTextures/c23/val10.txt"
+
+TEST:
+  DATA:
+    REAL_DATA:
+      DATASET: youtube
+      ROOT_PATH: "/vol/research/DeepFakeDet/notebooks/FaceForensics++/original_sequences/youtube/c23/frames"
+      SPLITS_FILE: "/vol/research/DeepFakeDet/notebooks/FaceForensics++/original_sequences/youtube/c23/test10.txt"
+    FAKE_DATA:
+      DATASET: NeuralTextures # as it appears as folder name
+      ROOT_PATH: "/vol/research/DeepFakeDet/notebooks/FaceForensics++/manipulated_sequences/NeuralTextures/c23/frames"                     # Raw dataset path, need to be updated
+      SPLITS_FILE: "/vol/research/DeepFakeDet/notebooks/FaceForensics++/manipulated_sequences/NeuralTextures/c23/test10.txt"
