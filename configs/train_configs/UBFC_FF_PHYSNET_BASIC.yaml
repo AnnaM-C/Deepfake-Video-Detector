@@ -5,7 +5,7 @@ TRAIN:
   EPOCHS: 50
   LR: 0.001 # 9e-3
   # MODEL_FILE_NAME: PhysNet_NeuralTextures__SGD_LR=0.001_LRReducer_32_frames_new_preprocessed_ds_real_paths_more_frames_3
-  MODEL_FILE_NAME: PhysNet_NeuralTextures_SGD_LR=0.001_LRReducer_32_frames_new_preprocessed_ds_real_paths_more_frames_interative_Epoch5_test_testing
+  MODEL_FILE_NAME: PhysNet_NeuralTextures_SGD_LR=0.001_LRReducer_32_frames_new_preprocessed_ds_real_paths_more_frames_skip_2_random_crop_rotation_test_2
   PLOT_LOSSES_AND_LR: True
   DATA:
     FS: 30

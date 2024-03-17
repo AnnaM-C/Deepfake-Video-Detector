@@ -9,6 +9,7 @@ import torch
 from config import get_config
 from dataset import data_loader
 from neural_methods import trainer
+from neural_methods.trainer.PhysnetrppgTrainer import PhysnetrppgTrainer
 from neural_methods.trainer.ResNet3DTrainer import ResNet3DTrainer
 from neural_methods.trainer.XceptionNetTrainer import XceptionNetTrainer
 from neural_methods.trainer.Xception3DTrainer import Xception3DTrainer
@@ -69,6 +70,12 @@ def add_args(parser):
     '''
     return parser
 
+def get_rPPG(config, data_loader_dict):
+    if config.MODEL.NAME == "Physnet":
+        model_trainer = PhysnetrppgTrainer(config, data_loader_dict)
+    else:
+        raise ValueError('Your Model is Not Supported  Yet!')
+    model_trainer.get_rPPG(data_loader_dict)
 
 def train_and_test(config, data_loader_dict):
     # twriter = SummaryWriter(log_dir='Exp1/logs/NT_physnet_training_SGD_001')
@@ -159,7 +166,6 @@ if __name__ == "__main__":
     config = get_config(args)
     print('Configuration:')
     print(config, end='\n\n')
-
     data_loader_dict = dict() # dictionary of data loaders 
     
     #transforms
@@ -184,8 +190,14 @@ if __name__ == "__main__":
             transforms.Resize((256, 256)),
             ToTensorVideo(), # scales pixels from [0, 255] to [0, 1]
         ]) 
+    elif config.MODEL.NAME == "Physnetrppg":
+        transform = transforms.Compose([
+            transforms.Resize((128, 128)),
+            ToTensorVideo(),
+        ]) 
 
     if config.TOOLBOX_MODE == "train_and_test":
+        print("Entered train and test")
         # train_loader
         # if config.TRAIN.DATA.DATASET == "UBFC-rPPG":
         #     train_loader = data_loader.UBFCrPPGLoader.UBFCrPPGLoader
@@ -358,7 +370,6 @@ if __name__ == "__main__":
             data_loader_dict["valid"] = DataLoader(valid_dataset, batch_size=config.TRAIN.BATCH_SIZE, shuffle=False, num_workers=8)
         else:
             data_loader_dict['valid'] = None
-            
 
     if config.TOOLBOX_MODE == "train_and_test" or config.TOOLBOX_MODE == "only_test":
 
@@ -440,15 +451,66 @@ if __name__ == "__main__":
     #     else:
     #         data_loader_dict['test'] = None
 
-    
-    
+    if config.TOOLBOX_MODE == "get_rPPG":
 
-    else:
-        raise ValueError("Unsupported toolbox_mode! Currently support train_and_test or only_test or unsupervised_method.")
+        train_real_files = get_files_from_splits(f'/vol/research/DeepFakeDet/notebooks/FaceForensics++/original_sequences/youtube/c23/train.txt')
+        valid_real_files = get_files_from_splits(f'/vol/research/DeepFakeDet/notebooks/FaceForensics++/original_sequences/youtube/c23/val.txt')
+        test_real_files = get_files_from_splits(f'/vol/research/DeepFakeDet/notebooks/FaceForensics++/original_sequences/youtube/c23/test.txt')
+        train_fake_dataset_file_paths={}
+        valid_fake_dataset_file_paths={}
+        test_fake_dataset_file_paths={}
+        train_dataset_names=[]
+        valid_dataset_names=[]
+        test_dataset_names=[]
+
+        train_loader = dataset.data_loader.VideoFramesDataset.VideoFramesDataset
+        train_data_loader = train_loader(
+            train_real_files,
+            train_fake_dataset_file_paths,
+            config,
+            train_dataset_names,
+            frames_per_clip=config.MODEL.PHYSNET.FRAME_NUM,
+            transform=transform,
+            max_frames_per_video=270
+        )
+        print("Train: save a clip plot")
+        train_data_loader.save_clip_plots(idx=1, save_dir='Exp1/chunks/train/rPPG', frames_to_show=5)
+        data_loader_dict['train'] = DataLoader(train_data_loader, batch_size=config.INFERENCE.BATCH_SIZE, shuffle=True, num_workers=8)
+
+        valid_loader = dataset.data_loader.VideoFramesDataset.VideoFramesDataset
+        valid_dataset = valid_loader(
+            valid_real_files,
+            valid_fake_dataset_file_paths,
+            config,
+            valid_dataset_names,
+            frames_per_clip=config.MODEL.PHYSNET.FRAME_NUM,
+            transform=transform,
+            max_frames_per_video=110
+        )
+        print("Valid: save a clip plot")
+        valid_dataset.save_clip_plots(idx=1, save_dir='Exp1/chunks/valid/rPPG', frames_to_show=5)
+        data_loader_dict["valid"] = DataLoader(valid_dataset, batch_size=config.INFERENCE.BATCH_SIZE, shuffle=False, num_workers=8)
+
+        test_loader = dataset.data_loader.VideoFramesDataset.VideoFramesDataset
+        test_data_loader = test_loader(
+                test_real_files,
+                test_fake_dataset_file_paths,
+                config,
+                test_dataset_names,
+                frames_per_clip=config.MODEL.PHYSNET.FRAME_NUM,
+                transform=transform,
+                max_frames_per_video=110
+            )
+        test_data_loader.save_clip_plots(idx=1, save_dir='Exp1/chunks/test/rPPG', frames_to_show=5)
+        data_loader_dict['test'] = DataLoader(test_data_loader, batch_size=config.INFERENCE.BATCH_SIZE, shuffle=False, num_workers=8)
+    # else:
+    #     raise ValueError("Unsupported toolbox_mode! Currently support train_and_test or only_test or unsupervised_method.")
 
     if config.TOOLBOX_MODE == "train_and_test":
         train_and_test(config, data_loader_dict)
     elif config.TOOLBOX_MODE == "only_test":
         test(config, data_loader_dict)
+    elif config.TOOLBOX_MODE == "get_rPPG":
+        get_rPPG(config, data_loader_dict)
     else:
         print("TOOLBOX_MODE only support train_and_test or only_test !", end='\n\n')

@@ -9,6 +9,7 @@ import torch
 from torch.utils.data import Dataset
 import os
 from PIL import Image
+import random
 
 # # class VideoFramesDataset(Dataset):
 # #     def __init__(self, root_path, splits_file, transform=None, chunk_size=32):
@@ -265,8 +266,9 @@ import bisect
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset
 
-# Class for overlapping chunks
+# Class for overlapping chunks - added diff normalisation
 class VideoFramesDataset(Dataset):
+    # Every 2
     def __init__(
         self,
         real_videos,
@@ -286,12 +288,11 @@ class VideoFramesDataset(Dataset):
         self.config = config
         self.paths = []
         self.clips_per_video = []
-
+        print("real videos, ", real_videos)
         ds_methods = ['youtube'] + dataset_names
         for ds_method in ds_methods:
             ds_type = 'original_sequences' if ds_method == 'youtube' else 'manipulated_sequences'
             videos = sorted(real_videos if ds_method == 'youtube' else fake_videos_file_paths[ds_method])
-
             video_paths = os.path.join('/vol/research/DeepFakeDet/notebooks/FaceForensics++', ds_type, ds_method, compression, 'frames')
             self.videos_per_type[ds_method] = len(videos)
 
@@ -302,8 +303,12 @@ class VideoFramesDataset(Dataset):
                 num_clips = ((num_frames - frames_per_clip) // 2) + 1 if num_frames >= frames_per_clip else 0
                 self.clips_per_video.append(num_clips)
                 self.paths.append(path)
+        print("clips per video, ", self.clips_per_video)
 
         self.cumulative_sizes = [sum(self.clips_per_video[:i+1]) for i in range(len(self.clips_per_video))]
+        print("From videoloader print [-1] cummulative: ", self.cumulative_sizes[-1])
+        print("From videoloader print length cummulative: ", len(self.cumulative_sizes))
+        print("Cummulative list, ", self.cumulative_sizes)
     # Every 4
     # def __init__(
     #     self,
@@ -353,15 +358,34 @@ class VideoFramesDataset(Dataset):
         print("Cummulative list, ", self.cumulative_sizes)
 
         return self.cumulative_sizes[-1]
+    
+    @staticmethod
+    def diff_normalize_data(data):
+        """Calculate discrete difference in video data along the time-axis and nornamize by its standard deviation."""
+        n, h, w, c = data.shape
+        diffnormalized_len = n - 1
+        diffnormalized_data = np.zeros((diffnormalized_len, h, w, c), dtype=np.float32)
+        diffnormalized_data_padding = np.zeros((1, h, w, c), dtype=np.float32)
+        for j in range(diffnormalized_len):
+            diffnormalized_data[j, :, :, :] = (data[j + 1, :, :, :] - data[j, :, :, :]) / (
+                    data[j + 1, :, :, :] + data[j, :, :, :] + 1e-7)
+        diffnormalized_data = diffnormalized_data / np.std(diffnormalized_data)
+        diffnormalized_data = np.append(diffnormalized_data, diffnormalized_data_padding, axis=0)
+        diffnormalized_data[np.isnan(diffnormalized_data)] = 0
+        return diffnormalized_data
 
-    def crop_frame(self, pil_img):
-        width, height = pil_img.size
-        left = width * 0.15
-        top = height * 0.15
-        right = width * 0.85
-        bottom = height
-        pil_img_cropped = pil_img.crop((left, top, right, bottom))
-        return pil_img_cropped
+    def crop_frame(self, pil_img, left, top, right, bottom):
+            width, height = pil_img.size
+            # left = width * 0.20
+            # top = height * 0.20
+            # right = width * 0.80
+            # bottom = height
+            left = width * left
+            top = height * top
+            right = width - (width * right)
+            bottom = height
+            pil_img_cropped = pil_img.crop((left, top, right, bottom))
+            return pil_img_cropped
 
     # # Consecutive frames
     # def get_clip(self, idx):
@@ -409,11 +433,23 @@ class VideoFramesDataset(Dataset):
     #         sample = torch.from_numpy(sample)
     #     return sample, video_idx
 
+    # Every 2
+    # adapt to return frame paths
     def get_clip(self, idx):
         video_idx = bisect.bisect_right(self.cumulative_sizes, idx)
+        print("Video index, ", video_idx)
         clip_idx = idx - self.cumulative_sizes[video_idx - 1] if video_idx > 0 else idx
         path = self.paths[video_idx]
         frames = [f for f in sorted(os.listdir(path)) if not f.startswith('._')]
+
+        # TODO: rotation
+        rotation_angle = random.uniform(-5, 5)
+        crop_percents = {
+            'left': random.uniform(0, 0.20),
+            'top': random.uniform(0, 0.20),
+            'right': random.uniform(0, 0.20),
+            'bottom': random.uniform(0, 0.20)
+        }
 
         start_idx = clip_idx * 2
         end_idx = start_idx + self.frames_per_clip
@@ -422,16 +458,25 @@ class VideoFramesDataset(Dataset):
             return None, video_idx
 
         sample = []
+        frame_filepaths = []
         for idx in range(start_idx, end_idx):
+            frame_path = os.path.join(path, frames[idx])
+            frame_filepaths.append(frame_path)
             with Image.open(os.path.join(path, frames[idx])) as pil_img:
-                pil_img_cropped = self.crop_frame(pil_img)
+                #NOTE: rotation
+                pil_img_rotated = pil_img.rotate(rotation_angle)
+                pil_img_cropped = self.crop_frame(pil_img_rotated, **crop_percents)
                 img = self.transform(pil_img_cropped) if self.transform is not None else np.array(pil_img_cropped)
                 sample.append(img)
 
         sample = np.stack(sample)
+        if self.config.TEST.DATA.PREPROCESS.DATA_TYPE[0] == 'DiffNormalized':
+            # print("Diff Normalise")
+            # print(sample.shape)
+            sample = self.diff_normalize_data(sample)
         if self.transform is None:
             sample = torch.from_numpy(sample)
-        return sample, video_idx
+        return sample, video_idx, frame_filepaths
     
     def save_clip_plots(self, idx, save_dir, frames_to_show=5):
         """
@@ -444,8 +489,8 @@ class VideoFramesDataset(Dataset):
         """
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
-
-        sample, video_idx = self.get_clip(idx)
+        print("Video index as argument, ", idx)
+        sample, video_idx, _ = self.get_clip(idx)
         path = self.paths[video_idx]
         frames = sorted(os.listdir(path))
 
@@ -478,12 +523,12 @@ class VideoFramesDataset(Dataset):
             plt.close()
 
     def __getitem__(self, idx):
-        sample, video_idx = self.get_clip(idx)
+        sample, video_idx, frame_filepaths = self.get_clip(idx)
         label = 0 if video_idx < self.videos_per_type['youtube'] else 1
         sample = torch.from_numpy(sample)
         label = torch.tensor(label, dtype=torch.long)
         if self.config.MODEL.NAME == "Physnet":
             #NOTE: for PhysNet only
             sample = sample.permute(1, 0, 2, 3)
-        return sample, label, video_idx
+        return sample, label, video_idx, frame_filepaths
     
