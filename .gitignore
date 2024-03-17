@@ -2,6 +2,7 @@ __pycache__/
 *.py[cod]
 *.log
 *.mat
+*.pth
 .idea
 preprocess
 preprocessed
@@ -18,3 +19,7 @@ multi_test.py
 neural_methods/trainer/PhysnetTrainer_backup.py
 debug_utils_physnet.py
 test.yaml
+pretrained
+final_model_release
+Exp1
+tools
