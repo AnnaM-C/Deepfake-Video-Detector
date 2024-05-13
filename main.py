@@ -20,7 +20,7 @@ import dataset.data_loader.VideoFramesDataset
 from dataset.transforms import NormalizeVideo, ToTensorVideo, ToTensorVideoNoPermutation
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
-
+from neural_methods.trainer.MultiPhysNetModelTrainer import MultiPhysNetModelTrainer
 
 RANDOM_SEED = 100
 torch.manual_seed(RANDOM_SEED)
@@ -104,6 +104,10 @@ def train_and_test(config, data_loader_dict):
         model_trainer = Xception3DTrainer(config, data_loader_dict)
         unique_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         writer = SummaryWriter(log_dir=f'Exp1/logs/output/XceptionNet3D/{config.TRAIN.MODEL_FILE_NAME}_{unique_time}')
+    elif config.MODEL.NAME == "MultiPhysNetModel":
+        model_trainer = MultiPhysNetModelTrainer(config, data_loader_dict)
+        unique_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        writer = SummaryWriter(log_dir=f'Exp1/logs/output/MultiPhysNetModelTrainer/{config.TRAIN.MODEL_FILE_NAME}_{unique_time}')    
     elif config.MODEL.NAME == "EfficientPhys":
         model_trainer = trainer.EfficientPhysTrainer.EfficientPhysTrainer(config, data_loader_dict)
     elif config.MODEL.NAME == 'DeepPhys':
@@ -130,6 +134,8 @@ def test(config, data_loader_dict):
         model_trainer = XceptionNetTrainer(config, data_loader_dict)
     elif config.MODEL.NAME == "Xception3D":
         model_trainer = trainer.Xception3DTrainer.Xception3DTrainer(config, data_loader_dict)
+    elif config.MODEL.NAME == "MultiPhysNetModel":
+        model_trainer = MultiPhysNetModelTrainer(config, data_loader_dict)
     elif config.MODEL.NAME == "EfficientPhys":
         model_trainer = trainer.EfficientPhysTrainer.EfficientPhysTrainer(config, data_loader_dict)
     elif config.MODEL.NAME == 'DeepPhys':
@@ -169,7 +175,7 @@ if __name__ == "__main__":
     data_loader_dict = dict() # dictionary of data loaders 
     
     #transforms
-    if config.MODEL.NAME == "Physnet":
+    if config.MODEL.NAME == "Physnet" or config.MODEL.NAME == "MultiPhysNetModel":
         print("Entered for transforming..")
         transform = transforms.Compose([
             transforms.Resize((128, 128)),
@@ -195,6 +201,16 @@ if __name__ == "__main__":
             transforms.Resize((128, 128)),
             ToTensorVideo(),
         ]) 
+
+    if (config.MODEL.NAME == "MultiPhysNetModel"):
+            # file contains 32 frames skipping 2: rPPG training labels - real
+            rPPG_train_path='rppgpredictions_16frames_train_final.csv'
+            rPPG_valid_path='rppgpredictions_16frames_valid_final.csv'
+            rPPG_test_path='rppgpredictions_16frames_test_final.csv'
+    else:
+            rPPG_train_path=None
+            rPPG_valid_path=None
+            rPPG_test_path=None
 
     if config.TOOLBOX_MODE == "train_and_test":
         print("Entered train and test")
@@ -274,8 +290,7 @@ if __name__ == "__main__":
                     train_real_files,
                     train_fake_dataset_file_paths,
                     transform=transform,
-                    max_frames_per_video=270
-
+                    max_frames_per_video=270,
                 )
                 train_data_loader.plot_image(idx=110, save_dir='Exp1/images/train')
             else:
@@ -287,7 +302,8 @@ if __name__ == "__main__":
                     train_dataset_names,
                     frames_per_clip=config.TRAIN.DATA.PREPROCESS.CHUNK_LENGTH,
                     transform=transform,
-                    max_frames_per_video=270
+                    max_frames_per_video=270,
+                    rPPG_csv_path=rPPG_train_path
                 )
                 print("Train video dataloader len inside main.py, ", len(train_data_loader))
                 train_data_loader.save_clip_plots(idx=1, save_dir='Exp1/chunks/train', frames_to_show=5)
@@ -363,7 +379,8 @@ if __name__ == "__main__":
                     valid_dataset_names,
                     frames_per_clip=config.VALID.DATA.PREPROCESS.CHUNK_LENGTH,
                     transform=transform,
-                    max_frames_per_video=110
+                    max_frames_per_video=110,
+                    rPPG_csv_path=rPPG_valid_path
                 )
                 valid_dataset.save_clip_plots(idx=1, save_dir='Exp1/chunks/valid', frames_to_show=5)
             
@@ -406,7 +423,9 @@ if __name__ == "__main__":
                     test_dataset_names,
                     frames_per_clip=config.TEST.DATA.PREPROCESS.CHUNK_LENGTH,
                     transform=transform,
-                    max_frames_per_video=110
+                    max_frames_per_video=110,
+                    rPPG_csv_path=rPPG_test_path
+
                 )
             test_data_loader.save_clip_plots(idx=1, save_dir='Exp1/chunks/test', frames_to_show=5)
         data_loader_dict['test'] = DataLoader(test_data_loader, batch_size=config.TRAIN.BATCH_SIZE, shuffle=False, num_workers=8)
@@ -476,6 +495,7 @@ if __name__ == "__main__":
         print("Train: save a clip plot")
         train_data_loader.save_clip_plots(idx=1, save_dir='Exp1/chunks/train/rPPG', frames_to_show=5)
         data_loader_dict['train'] = DataLoader(train_data_loader, batch_size=config.INFERENCE.BATCH_SIZE, shuffle=True, num_workers=8)
+        print("Train dataloader length, ", len(train_data_loader))
 
         valid_loader = dataset.data_loader.VideoFramesDataset.VideoFramesDataset
         valid_dataset = valid_loader(
