@@ -1,8 +1,4 @@
 '''
-# author: Zhiyuan Yan
-# email: zhiyuanyan@link.cuhk.edu.cn
-# date: 2023-0706
-
 The code is mainly modified from GitHub link below:
 https://github.com/ondyari/FaceForensics/blob/master/classification/network/xception.py
 '''

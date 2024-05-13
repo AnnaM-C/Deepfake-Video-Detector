@@ -1,5 +1,4 @@
 """ PhysNet
-We replicate the net pipeline of the orginal paper, but set the input as diffnormalized data.
 orginal source:
 Remote Photoplethysmograph Signal Measurement from Facial Videos Using Spatio-Temporal Networks
 British Machine Vision Conference (BMVC)} 2019,

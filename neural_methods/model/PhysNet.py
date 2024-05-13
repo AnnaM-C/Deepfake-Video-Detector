@@ -1,6 +1,6 @@
 """ PhysNet
-We repulicate the net pipeline of the orginal paper, but set the input as diffnormalized data.
-orginal source:
+We adapt PhysNet for binary classification.
+Orginal source:
 Remote Photoplethysmograph Signal Measurement from Facial Videos Using Spatio-Temporal Networks
 British Machine Vision Conference (BMVC)} 2019,
 By Zitong Yu, 2019/05/05

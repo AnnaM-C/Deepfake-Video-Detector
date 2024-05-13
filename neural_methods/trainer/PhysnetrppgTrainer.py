@@ -98,23 +98,18 @@ class PhysnetrppgTrainer(BaseTrainer):
         print(f"Saved all batch predictions to {csv_file_path}.")
         print('')
         '''
-        txt_file_path = 'rppgpredictions_16frames_trainset2.txt'
+        txt_file_path = 'rPPG_predictions/rppgpredictions_16frames_trainset2.txt'
         with torch.no_grad():
-        # Open the text file for writing
             with open(txt_file_path, 'w') as file:
                 for batch_index, test_batch in enumerate(tqdm(data_loader["train"], ncols=80)):
                     batch_size = test_batch[0].shape[0]
                     data, label = test_batch[0].to(self.config.DEVICE), test_batch[1].to(self.config.DEVICE)
                     file_paths = test_batch[3]
-                    # print("Filepath, ", file_paths)
                     pred_rppg_test, _, _, _, _ = self.model(data)
                     pred_rppg_test = pred_rppg_test.cpu().numpy()
-                    # print("rPPG, ", pred_rppg_test)
 
                     for i in range(batch_size):
-                        # Create the line to be written for each prediction
                         line = f"{batch_index + 1}, {file_paths[i]}, {' '.join(map(str, pred_rppg_test[i]))}\n"
-                        # Write the line to the file
                         file.write(line)
 
         print(f"Saved all batch predictions to {txt_file_path}.")
