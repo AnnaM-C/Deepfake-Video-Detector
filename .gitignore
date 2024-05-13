@@ -29,3 +29,5 @@ Utils/._
 results_0/*
 !results_0/graphs/
 dlib_tools
+tools/preprocessing_viz
+final_model_release/PURE_PhysNet_DiffNormalized.pth
