@@ -32,14 +32,6 @@ root_path1 = "/vol/research/DeepFakeDet/rPPG-Toolbox/results_0/PhysNet_Face2Face
 
 root_path2 = "/vol/research/DeepFakeDet/rPPG-Toolbox/results_0/PhysNet_Face2Face_ADAM_LR=0.001_LRReducer_16_frames_0.5binary_0.5rPPG_scaling_0.001_0.0001_LR_multi_model_epoch26"
 
-# root_path1 = "/vol/research/DeepFakeDet/rPPG-Toolbox/results_0/PhysNet_Face2Face_chunk_size_16_testdata"
-
-# root_path2 = "/vol/research/DeepFakeDet/rPPG-Toolbox/results_0/PhysNet_Face2Face_chunk_size_32_testdata"
-
-# root_path1="/vol/research/DeepFakeDet/rPPG-Toolbox/results_0/PhysNet_Face2Face_ADAM_LR=0.001_LRReducer_16_frames_0.7binary_0.3rPPG_scaling_multi_model_test"
-# root_path1="/vol/research/DeepFakeDet/rPPG-Toolbox/results_0/results_0/PhysNet_Face2Face_ADAM_LR=0.001_LRReducer_16_frames_0.5binary_0.5rPPG_scaling_multi_model_continue_from_epoch_16_epoch19"
-
-
 unique_items = compare_directories(root_path1, root_path2)
 
 for path, count in unique_items.items():

@@ -1,3 +1,4 @@
+# Refactored from Code Base by https://github.com/ubicomplab/rPPG-Toolbox
 BASE: ['']
 TOOLBOX_MODE: "only_test"      # "train_and_test"  or "only_test"
 TRAIN:

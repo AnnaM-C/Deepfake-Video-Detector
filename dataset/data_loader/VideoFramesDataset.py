@@ -12,57 +12,7 @@ from PIL import Image
 import random
 import pandas as pd
 
-# # class VideoFramesDataset(Dataset):
-# #     def __init__(self, root_path, splits_file, transform=None, chunk_size=32):
-# #         self.root_path = root_path
-# #         self.transform = transform
-# #         self.chunk_size = chunk_size
-# #         self.video_labels = self._load_splits(splits_file)
-# #         self.index_mapping = self._create_index_mapping()
-
-# #     def _load_splits(self, splits_file):
-# #         video_labels = {}
-# #         with open(splits_file, 'r') as f:
-# #             for line in f:
-# #                 parts = line.split(" ")
-# #                 if len(parts) == 2:
-# #                     video_path, label = parts
-# #                     # print('Video Path, ', video_path)
-# #                     # print("Labels, ", label)
-# #                     video_labels[video_path] = int(label)
-# #         return video_labels
-
-# #     def _create_index_mapping(self):
-# #         mapping = []
-# #         for video_path, label in self.video_labels.items():
-# #             all_frame_names = sorted(os.listdir(video_path), key=lambda x: int(x.split('.')[0]))
-# #             num_frames = len(all_frame_names)
-# #             num_full_chunks = num_frames // self.chunk_size
-# #             for chunk in range(num_full_chunks):
-# #                 mapping.append((video_path, chunk, label))
-# #         return mapping
-
-# #     def __len__(self):
-# #         return len(self.index_mapping)
-
-# #     def __getitem__(self, idx):
-# #         video_path, chunk_idx, label = self.index_mapping[idx]
-# #         print("Video path, ", video_path)
-# #         print("Chunk index, ", chunk_idx)
-# #         print("Label, ", label)
-# #         sorted_frame_names = sorted(os.listdir(video_path), key=lambda x: int(x.split('.')[0]))
-# #         start_frame = chunk_idx * self.chunk_size
-# #         selected_frame_names = sorted_frame_names[start_frame:start_frame + self.chunk_size]
-# #         frames = [Image.open(os.path.join(video_path, f)) for f in selected_frame_names]
-# #         if self.transform:
-# #             frames = [self.transform(frame) for frame in frames]
-# #         # use pytorches stack library to stack frames into a single new tensor [N, C, H, W]
-# #         frames_stack = torch.stack(frames)
-# #         print("Frames stack shape, ", frames_stack.shape)
-# #         # return the frame chunk and label
-# #         return frames_stack, torch.tensor(label, dtype=torch.long)
-
-## Class for nonoverlapping chunks
+# Class for nonoverlapping chunks
 # class VideoFramesDataset(Dataset):
 #     """Dataset class for FaceForensics++, FaceShifter, and DeeperForensics. Supports returning only a subset of forgery
 #     methods in dataset"""
@@ -95,14 +45,6 @@ import pandas as pd
 #                 ds_type = 'original_sequences'
 #                 print("Real videos, ", len(real_videos))
 #                 videos = sorted(real_videos)
-#                 # print("Length of original videos, ", len(videos))
-#             # elif ds_type == 'DeeperForensics':  # Extra processing for DeeperForensics videos due to naming differences
-#             #     videos = []
-#             #     for f in fake_videos:
-#             #         for el in os.listdir(video_paths):
-#             #             if el.startswith(f.split('_')[0]):
-#             #                 videos.append(el)
-#             #     videos = sorted(videos)
 #             else:
 #                 ds_type = 'manipulated_sequences'
 #                 fake_videos = self.fake_videos_file_paths[ds_method]
@@ -111,19 +53,11 @@ import pandas as pd
 #                 print("Ds method, ", ds_method)
 
 #             video_paths = os.path.join('/vol/research/DeepFakeDet/notebooks/FaceForensics++', ds_type, ds_method, compression, 'frames')
-#             # print("Video paths", video_paths)
 #             self.videos_per_type[ds_method] = len(videos)
-#             # print("ds_method, ", len(videos))
 #             for video in videos:
-#                 # print("Video, ", video)
 #                 path = os.path.join(video_paths, video)
-#                 # print("Path, ", path)
 #                 num_frames = min(len(os.listdir(path)), max_frames_per_video)
-#                 # print("Num frames per video (270), ", num_frames)
-#                 # print("Frames per clip (5) === ", frames_per_clip)
-#                 # print("Frames per video (270), ", max_frames_per_video)
 #                 num_clips = num_frames // frames_per_clip
-#                 # print("Num clips, ", num_clips)
 #                 self.clips_per_video.append(num_clips)
 #                 self.paths.append(path)
 #             print("Num clips per video real/fake, ", len(self.clips_per_video))
@@ -159,42 +93,21 @@ import pandas as pd
 #             clip_idx = idx
 #         else:
 #             clip_idx = idx - self.cumulative_sizes[video_idx - 1]
-#         # print("Clip index, ", clip_idx)
-
 #         path = self.paths[video_idx]
-#         # frames = sorted(os.listdir(path))
-#         # print("Path, ", path)
-
-#         # filter out files starting with '._'
 #         frames = [f for f in sorted(os.listdir(path)) if not f.startswith('._')]
-
-#         # print("Frames, ", len(frames))
-
 #         start_idx = clip_idx * self.frames_per_clip
-
 #         end_idx = start_idx + self.frames_per_clip
-
 #         sample = []
 #         for idx in range(start_idx, end_idx, 1):
 #             with Image.open(os.path.join(path, frames[idx])) as pil_img:
-#                 # print("Pil image type, ", type(pil_img))
-#                 # img = np.array(pil_img)
-#                 # print("Image shape, ", img.shape)
 #                 pil_img_cropped = self.crop_frame(pil_img)
-
-#                 # apply transform to each frame
 #                 if self.transform is not None:
-#                     # print("Transforming data..")
 #                     img = self.transform(pil_img_cropped)
-#                     # print("Image shape, ", img.shape)
 #                 else:
 #                     img = np.array(pil_img_cropped)  # convert to np array if transform is None
-#                     # print("Image shape, ", img.shape)
 #                 sample.append(img)
-#             # sample.append(img)
 
 #         sample = np.stack(sample)
-#         # if transform is not applied stack and convert sample list to tensor
 #         if self.transform is None:
 #             sample = np.stack(sample)
 #             sample = torch.from_numpy(sample)
@@ -219,24 +132,14 @@ import pandas as pd
 
 #         label = '0' if video_idx < self.videos_per_type['youtube'] else '1'
 
-#         # Ensure we are showing consecutive frames starting from the beginning of the chunk
 #         for frame_idx in range(frames_to_show):
 #             if frame_idx >= len(sample):
-#                 break  # avoid going above the available number of frames
+#                 break
 
-#             # image_np = sample[frame_idx].cpu().numpy()  #convert to np
 #             image_np = sample[frame_idx]
 
 #             image_np = np.transpose(image_np, (1, 2, 0)) #rearrange from (C, H, W) to (H, W, C)
 
-#             # filepath = os.path.join(path, frames[frame_idx])
-#             # plt.figure(figsize=(10, 8))
-#             # plt.imshow(sample[frame_idx])
-#             # plt.title(f'Clip {idx} - Frame {frame_idx}\nPath: {filepath}\nLabel: {label}', fontsize=8)
-#             # plt.axis('off')
-#             # safe_filename = filepath.replace('/', '_').replace('\\', '_')
-#             # plt.savefig(os.path.join(save_dir, f'Label_{label}_Clip_{idx}_Frame_{frame_idx}_{safe_filename}.png'))
-#             # plt.close()
 #             plt.figure(figsize=(10, 8))
 #             plt.imshow(image_np)
 #             plt.title(f'Clip {idx} - Frame {frame_idx}\nPath: {path}\nLabel: {label}\nCrop boarders 15%', fontsize=8)
@@ -249,23 +152,12 @@ import pandas as pd
 #         sample, video_idx = self.get_clip(idx)
 #         label = 0 if video_idx < self.videos_per_type['youtube'] else 1
 #         label = torch.from_numpy(np.array(label))
-#         # print("Sample shape, ", sample.shape)
-#         # sample = torch.from_numpy(sample).unsqueeze(-1)
 #         sample = torch.from_numpy(sample)
-#         # if self.transform is not None:
-#         #     sample = self.transform(sample)
 #         if self.config.MODEL.NAME == "Physnet":
 #             #NOTE: for PhysNet only
 #             sample = sample.permute(1, 0, 2, 3)
 #         return sample, label, video_idx
 
-# import os
-# import torch
-# import numpy as np
-# from PIL import Image
-# import bisect
-# import matplotlib.pyplot as plt
-# from torch.utils.data import Dataset
 
 # Class for overlapping chunks - added diff normalisation
 class VideoFramesDataset(Dataset):
@@ -294,10 +186,7 @@ class VideoFramesDataset(Dataset):
         if rPPG_csv_path is not None:
             df = pd.read_csv(rPPG_csv_path)
             df['rPPG_values'] = df['rPPG_values'].apply(lambda x: [float(val) for val in x.replace(',', '').split()])
-            # print(df)
-            # print(cxv)
             self.frame_to_rppg = pd.Series(df.rPPG_values.values, index=df.frame_path).to_dict()
-            # print("Frame to rppg*, ", self.frame_to_rppg)
         else:
             self.frame_to_rppg = {}
 
@@ -312,18 +201,12 @@ class VideoFramesDataset(Dataset):
             for video in videos:
                 path = os.path.join(video_paths, video)
                 num_frames = min(len(os.listdir(path)), max_frames_per_video)
-                # print("Frames per clip, ", frames_per_clip)
-                # print("Num frames per video, ", num_frames)
-                # interval of 2 frames
                 num_clips = ((num_frames - frames_per_clip) // 2) + 1 if num_frames >= frames_per_clip else 0
                 self.clips_per_video.append(num_clips)
                 self.paths.append(path)
-        # print("clips per video, ", self.clips_per_video)
 
         self.cumulative_sizes = [sum(self.clips_per_video[:i+1]) for i in range(len(self.clips_per_video))]
-        # print("From videoloader print [-1] cummulative: ", self.cumulative_sizes[-1])
-        # print("From videoloader print length cummulative: ", len(self.cumulative_sizes))
-        # print("Cummulative list, ", self.cumulative_sizes)
+
     # Every 4
     # def __init__(
     #     self,
@@ -368,10 +251,6 @@ class VideoFramesDataset(Dataset):
 
         
     def __len__(self):
-        # print("From videoloader print [-1] cummulative: ", self.cumulative_sizes[-1])
-        # print("From videoloader print length cummulative: ", len(self.cumulative_sizes))
-        # print("Cummulative list, ", self.cumulative_sizes)
-
         return self.cumulative_sizes[-1]
     
     @staticmethod
@@ -390,6 +269,7 @@ class VideoFramesDataset(Dataset):
         return diffnormalized_data
 
     def crop_frame(self, pil_img, left, top, right, bottom):
+        """ Crop the frame """
             width, height = pil_img.size
             # left = width * 0.20
             # top = height * 0.20
@@ -460,6 +340,12 @@ class VideoFramesDataset(Dataset):
     # Every 2
     # adapt to return frame paths
     def get_clip(self, idx):
+        """
+        Get video clip of the given index.
+
+        Args:
+        idx (int): Index of the video clip to plot.
+        """
         video_idx = bisect.bisect_right(self.cumulative_sizes, idx)
         clip_idx = idx - self.cumulative_sizes[video_idx - 1] if video_idx > 0 else idx
         path = self.paths[video_idx]
@@ -536,6 +422,12 @@ class VideoFramesDataset(Dataset):
             plt.close()
 
     def __getitem__(self, idx):
+        """
+        Gets the chunks of data when VideoLoader is initialised.
+
+        Args:
+        idx (int): Index of the video clip.
+        """
         sample, video_idx, frame_filepath, diff_sample = self.get_clip(idx)
         if video_idx < self.videos_per_type['youtube']:
             label_binary = 0

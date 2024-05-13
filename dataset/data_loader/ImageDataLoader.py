@@ -18,24 +18,6 @@ class ImageDataLoader(Dataset):
         self.labels = []
         self.transform = transform
         self.max_frames_per_video = max_frames_per_video
-        # for folder in real_images_folders:
-        #     for frame in sorted(os.listdir(folder)):
-        #         frame_path = os.path.join(folder, frame)
-        #         if os.path.isfile(frame_path):
-        #             self.image_paths.append(frame_path)
-        #             self.labels.append(0)
-        # real_len=(len(self.image_paths))
-        # print("Real images folder, ", real_len)
-        # for dataset_name, folders in fake_images_folders.items():
-        #     for folder in folders:
-        #         for frame in sorted(os.listdir(folder)):
-        #             frame_path = os.path.join(folder, frame)
-        #             if os.path.isfile(frame_path):
-        #                 self.image_paths.append(frame_path)
-        #                 self.labels.append(1)
-        # print("Fake images len == 405490 , ", len(self.image_paths)-real_len)
-        # real_folder = []
-        # fake_folder = []
         for folder in real_images_folders:
             # real_folder.append(folder)
             for i, frame in enumerate(sorted(os.listdir(folder))):
