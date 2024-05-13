@@ -733,6 +733,11 @@ class ResNet3DTrainer(BaseTrainer):
             self.optimizer = SGD(self.model.parameters(), lr=config.TRAIN.LR, momentum=momentum, weight_decay=weight_decay)
             self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min', factor=0.5, patience=2, min_lr=0.0000000009, verbose=True)
 
+            pretrained_weights = torch.load("runs/exp/logs/ResNet3D-18_NeuralTextures_SGD_LR=0.001_LRreducer_frames_new_preprocessed_ds_real_paths_overlap_skip_2_rotation_cropping/PreTrainedModels/ResNet3D-18_NeuralTextures_SGD_LR=0.001_LRreducer_frames_new_preprocessed_ds_real_paths_overlap_skip_2_rotation_cropping_Epoch7.pth")
+            if pretrained_weights:
+                self.model.load_state_dict(pretrained_weights, strict=False)
+                print("Pretrained Loaded")
+
         elif config.TOOLBOX_MODE == "only_test":
             pass
         else:

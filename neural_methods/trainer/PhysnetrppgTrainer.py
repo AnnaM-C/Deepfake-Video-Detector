@@ -11,7 +11,7 @@ from neural_methods.model.Physnetrppg import PhysNet_padding_Encoder_Decoder_MAX
 from neural_methods.trainer.BaseTrainer import BaseTrainer
 from torch.autograd import Variable
 from tqdm import tqdm
-
+import csv
 
 class PhysnetrppgTrainer(BaseTrainer):
 
@@ -70,46 +70,54 @@ class PhysnetrppgTrainer(BaseTrainer):
         self.model = self.model.to(self.config.DEVICE)
         self.model.eval()
         print("Running model evaluation on the testing dataset!")
+        csv_data = [["Batch Index", "frame_path", "rPPG_values"]]
+        '''
         with torch.no_grad():
-            for _, test_batch in enumerate(tqdm(data_loader["train"], ncols=80)):
+            for batch_index, test_batch in enumerate(tqdm(data_loader["test"], ncols=80)):
                 batch_size = test_batch[0].shape[0]
                 data, label = test_batch[0].to(
                     self.config.DEVICE), test_batch[1].to(self.config.DEVICE)
                 file_paths=test_batch[3]
-                pred_ppg_test, _, _, _ = self.model(data)
+                print("Filepath, ", file_paths)
+                pred_rppg_test, _, _, _, _ = self.model(data)
+                pred_rppg_test = pred_rppg_test.cpu().numpy()
+                print("rPPG, ", pred_rppg_test)
 
-                # print("Filepaths, ", file_paths)
-                # print("Shape of predictions, ", pred_ppg_test)
-                if self.config.TEST.OUTPUT_SAVE_DIR:
-                    pred_ppg_test = pred_ppg_test.cpu()
-
-                # for (file, pred) in zip(file_paths, pred_ppg_test):
-                #     print(f"File: {file}, Prediction: {pred}")
-
-                # for idx in range(batch_size):
-                #     subj_index = test_batch[2][idx]
-                #     sort_index = int(test_batch[3][idx])
-                #     if subj_index not in predictions.keys():
-                #         predictions[subj_index] = dict()
-                #         labels[subj_index] = dict()
-                #     predictions[subj_index][sort_index] = pred_ppg_test[idx]
-                #     labels[subj_index][sort_index] = label[idx]
-                
-                matched_rppg = {}
-                for batch_idx, filepath_batch in enumerate(file_paths):
-                    matched_rppg[batch_idx] = {}
-                    for chunk_idx, start_frame in enumerate(filepath_batch):
-                        frame_sequence = [start_frame[:-7] + f"{int(start_frame[-7:-4]) + i:03}.png" for i in range(self.config.MODEL.PHYSNET.FRAME_NUM)]
-                        for frame_idx, frame in enumerate(frame_sequence):
-                            rppg_value = pred_ppg_test[(self.config.INFERENCE.BATCH_SIZE)-1 - chunk_idx][frame_idx]  # Adjust based on how your data matches up
-                            matched_rppg[batch_idx][frame] = rppg_value
-
+                for i in range(batch_size):
+                    row = [
+                        batch_index + 1,
+                        file_paths[i],
+                        " ".join(map(str, pred_rppg_test[i]))
+                    ]
+                    csv_data.append(row)
+        
+        csv_file_path = 'rppgpredictions_testset2.csv'
+        with open(csv_file_path, 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerows(csv_data)
+        print(f"Saved all batch predictions to {csv_file_path}.")
         print('')
-        # calculate_metrics(predictions, labels, self.config)
-        # if self.config.TEST.OUTPUT_SAVE_DIR: # saving test outputs 
-            # self.save_test_outputs(predictions, labels, self.config)
-        output_file = os.path.join(os.getcwd(), 'rppgpredictions_trainset.txt')
-        self.save_rppg_to_file(matched_rppg, output_file)
+        '''
+        txt_file_path = 'rppgpredictions_16frames_trainset2.txt'
+        with torch.no_grad():
+        # Open the text file for writing
+            with open(txt_file_path, 'w') as file:
+                for batch_index, test_batch in enumerate(tqdm(data_loader["train"], ncols=80)):
+                    batch_size = test_batch[0].shape[0]
+                    data, label = test_batch[0].to(self.config.DEVICE), test_batch[1].to(self.config.DEVICE)
+                    file_paths = test_batch[3]
+                    # print("Filepath, ", file_paths)
+                    pred_rppg_test, _, _, _, _ = self.model(data)
+                    pred_rppg_test = pred_rppg_test.cpu().numpy()
+                    # print("rPPG, ", pred_rppg_test)
+
+                    for i in range(batch_size):
+                        # Create the line to be written for each prediction
+                        line = f"{batch_index + 1}, {file_paths[i]}, {' '.join(map(str, pred_rppg_test[i]))}\n"
+                        # Write the line to the file
+                        file.write(line)
+
+        print(f"Saved all batch predictions to {txt_file_path}.")
 
     @staticmethod
     def save_rppg_to_file(matched_rppg, output_file):

@@ -355,7 +355,7 @@ from neural_methods.model.PhysNet import PhysNet_padding_Encoder_Decoder_MAX
 from neural_methods.trainer.BaseTrainer import BaseTrainer
 from torch.autograd import Variable
 from tqdm import tqdm
-from Utils.utils import calculate_accuracy
+from Utils.utils import calculate_accuracy, get_missclassified_samples, save_misclassified_samples, save_predictions
 from torch.utils.tensorboard import SummaryWriter
 from sklearn import metrics
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
@@ -387,6 +387,12 @@ class PhysnetTrainer(BaseTrainer):
             # See more details on the OneCycleLR scheduler here: https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.OneCycleLR.html
             self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
                 self.optimizer, max_lr=config.TRAIN.LR, epochs=config.TRAIN.EPOCHS, steps_per_epoch=self.num_train_batches)
+        
+            pretrained_weights = torch.load("/vol/research/DeepFakeDet/rPPG-Toolbox-ais/runs/exp/logs/PhysNet_NeuralTextures_ADAM_LR=0.001_LRReducer_32_frames_new_preprocessed_ds_real_paths_more_frames_overlap_skip_2_noaugmentation_latest_2/PreTrainedModels/PhysNet_NeuralTextures_ADAM_LR=0.001_LRReducer_32_frames_new_preprocessed_ds_real_paths_more_frames_overlap_skip_2_noaugmentation_latest_2_Epoch10.pth")
+            if pretrained_weights:
+                self.model.load_state_dict(pretrained_weights, strict=False)
+                print("Pretrained Loaded")
+        
         elif config.TOOLBOX_MODE == "only_test":
             pass
         else:
@@ -422,7 +428,7 @@ class PhysnetTrainer(BaseTrainer):
                 pred_labels = np.argmax(proba.cpu().detach().numpy(), axis=1)
 
                 running_accuracy += calculate_accuracy(pred_labels, labels)
-                if idx % 100 == 99:  # print every 100 mini-batches
+                if idx % 100 == 99:
                     print(
                         f'[{epoch}, {idx + 1:5d}] loss: {running_loss / 100:.3f}')
                     running_loss = 0.0
@@ -535,13 +541,14 @@ class PhysnetTrainer(BaseTrainer):
         test_true = []
         test_preds = []
         test_acc = []
+        test_filepaths=[]
         self.model.eval()
         print("Running model evaluation on the testing dataset!")
         with torch.no_grad():
             for _, test_batch in enumerate(tqdm(data_loader["test"], ncols=80)):
                 batch_size = test_batch[0].shape[0]
-                data, labels = test_batch[0].to(
-                    self.config.DEVICE), test_batch[1].to(self.config.DEVICE)
+                data, labels, file_path = test_batch[0].to(
+                    self.config.DEVICE), test_batch[1].to(self.config.DEVICE), test_batch[3]
                 labels = labels.long()
                 # pred_ppg_test, _, _, _ = self.model(data)
                 prediction = self.model(data)
@@ -550,11 +557,13 @@ class PhysnetTrainer(BaseTrainer):
                 acc = calculate_accuracy(pred_labels, labels)
                 test_acc.append(acc)
 
-                scores = proba[:, 1].cpu().detach().numpy()  # probability of positive class
+                scores = proba[:, 1].cpu().detach().numpy()
                 test_true.extend(labels.cpu().numpy())
                 test_scores.extend(scores)
 
                 test_preds.extend(pred_labels)
+
+                test_filepaths.extend(file_path)
 
                 if self.config.TEST.OUTPUT_SAVE_DIR:
                     labels = labels.cpu()
@@ -590,6 +599,13 @@ class PhysnetTrainer(BaseTrainer):
         plt.close(fig)  # Close the figure to free memory
         print('')
         # calculate_metrics(predictions, labels, self.config)
+
+        misclassified_samples=get_missclassified_samples(test_preds, test_true, test_filepaths)
+        print("Misclassified samples, ", misclassified_samples)
+        save_misclassified_samples(misclassified_samples, self.config)
+        
+        #Save predictions
+        save_predictions(test_preds, test_true, test_filepaths, self.config.TRAIN.MODEL_FILE_NAME)
 
         # save for binary classification
         if self.config.TEST.OUTPUT_SAVE_DIR: # saving test outputs 

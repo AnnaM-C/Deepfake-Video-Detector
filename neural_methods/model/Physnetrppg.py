@@ -1,5 +1,5 @@
 """ PhysNet
-We repulicate the net pipeline of the orginal paper, but set the input as diffnormalized data.
+We replicate the net pipeline of the orginal paper, but set the input as diffnormalized data.
 orginal source:
 Remote Photoplethysmograph Signal Measurement from Facial Videos Using Spatio-Temporal Networks
 British Machine Vision Conference (BMVC)} 2019,
@@ -20,7 +20,8 @@ from torch.nn.modules.utils import _triple
 class PhysNet_padding_Encoder_Decoder_MAX(nn.Module):
     def __init__(self, frames=128):
         super(PhysNet_padding_Encoder_Decoder_MAX, self).__init__()
-
+        self.frames=frames
+        
         self.ConvBlock1 = nn.Sequential(
             nn.Conv3d(3, 16, [1, 5, 5], stride=1, padding=[0, 2, 2]),
             nn.BatchNorm3d(16),
@@ -117,8 +118,8 @@ class PhysNet_padding_Encoder_Decoder_MAX(nn.Module):
 
         # x [64, T, 1,1]    -->  groundtruth left and right - 7
         x = self.poolspa(x)
-        x = self.ConvBlock10(x)  # x [1, T, 1,1]
+        channels = self.ConvBlock10(x)  # x [1, T, 1,1]
 
-        rPPG = x.view(-1, length)
+        rPPG = channels.view(-1, length)
 
-        return rPPG, x_visual, x_visual3232, x_visual1616
+        return rPPG, channels, x_visual, x_visual3232, x_visual1616
