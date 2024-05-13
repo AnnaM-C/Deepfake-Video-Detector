@@ -23,3 +23,9 @@ pretrained
 final_model_release
 Exp1
 tools
+._*
+Utils/._
+.DS_Store
+results_0/*
+!results_0/graphs/
+dlib_tools
