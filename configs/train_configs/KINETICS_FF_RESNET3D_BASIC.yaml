@@ -1,10 +1,10 @@
 BASE: ['']
-TOOLBOX_MODE: "train_and_test"      # "train_and_test"  or "only_test"
+TOOLBOX_MODE: "only_test"      # "train_and_test"  or "only_test"
 TRAIN:
   BATCH_SIZE: 6
-  EPOCHS: 70
-  LR: 0.01 # 9e-3
-  MODEL_FILE_NAME: ResNet3D-18_NeuralTextures_SGD_LR=0.01_LRreducer_10_frames_new_preprocessed_ds_real_paths_more_samples_test_10
+  EPOCHS: 40
+  LR: 0.001 # 9e-3
+  MODEL_FILE_NAME: ResNet3D-18_Face2Face_SGD_LR=0.001_LRreducer_frames_new_preprocessed_ds_real_paths_overlap_skip_2_rotation_cropping_continuationfromepoch7_testset
   PLOT_LOSSES_AND_LR: True
   DATA:
     FS: 30
@@ -20,7 +20,7 @@ TRAIN:
       DATA_TYPE: ['Raw']         #if use physnet, should be DiffNormalized
       LABEL_TYPE: Raw
       DO_CHUNK: True
-      CHUNK_LENGTH: 5                #only support for factor of 512
+      CHUNK_LENGTH: 32                #only support for factor of 512
       CROP_FACE:
         DO_CROP_FACE: False
         BACKEND: 'HC'    # HC for Haar Cascade, RF for RetinaFace
@@ -48,7 +48,7 @@ VALID:
       DATA_TYPE: ['Raw']         #if use physnet, should be DiffNormalized
       LABEL_TYPE: Raw
       DO_CHUNK: True
-      CHUNK_LENGTH: 5                 #only support for factor of 512
+      CHUNK_LENGTH: 32                 #only support for factor of 512
       CROP_FACE:
         DO_CROP_FACE: False
         BACKEND: 'HC'    # HC for Haar Cascade, RF for RetinaFace
@@ -66,7 +66,7 @@ TEST:
   USE_LAST_EPOCH: False                     # to use provided validation dataset to find the best epoch, should be false
   DATA:
     FS: 30
-    DATASET: NeuralTextures
+    DATASET: Face2Face
     DO_PREPROCESS: False                    # if first time, should be true
     DATA_FORMAT: NCDHW
     DATA_PATH: "/gscratch/ubicomp/xliu0/data3/mnt/Datasets/PURE/RawData"                     # Raw dataset path, need to be updated
@@ -78,7 +78,7 @@ TEST:
       DATA_TYPE: ['Raw']         #if use physnet, should be DiffNormalized
       LABEL_TYPE: Raw
       DO_CHUNK: True
-      CHUNK_LENGTH: 5                 #only support for factor of 512
+      CHUNK_LENGTH: 32                 #only support for factor of 512
       CROP_FACE:
         DO_CROP_FACE: True
         BACKEND: 'HC'    # HC for Haar Cascade, RF for RetinaFace
@@ -99,11 +99,11 @@ MODEL:
   DROP_RATE: 0.2
   NAME: ResNet3D
   RESNET3D:
-    FRAME_NUM: 5
+    FRAME_NUM: 32
 INFERENCE:
-  BATCH_SIZE: 4
+  BATCH_SIZE: 6
   EVALUATION_METHOD: "FFT"        # "FFT" or "peak detection"
   EVALUATION_WINDOW:
     USE_SMALLER_WINDOW: False        # Change this if you'd like an evaluation window smaller than the test video length
     WINDOW_SIZE: 10        # In seconds
-  MODEL_PATH:   ""
+  MODEL_PATH:   "runs/exp/logs/ResNet3D-18_NeuralTextures_SGD_LR=0.001_LRreducer_frames_new_preprocessed_ds_real_paths_overlap_skip_2_rotation_cropping_continuationfromepoch7/PreTrainedModels/ResNet3D-18_NeuralTextures_SGD_LR=0.001_LRreducer_frames_new_preprocessed_ds_real_paths_overlap_skip_2_rotation_cropping_continuationfromepoch7_Epoch7.pth"

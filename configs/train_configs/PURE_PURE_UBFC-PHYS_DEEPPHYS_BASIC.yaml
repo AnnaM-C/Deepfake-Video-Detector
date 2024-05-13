@@ -4,10 +4,10 @@ TRAIN:
   BATCH_SIZE: 4
   EPOCHS: 30
   LR: 9e-3
-  MODEL_FILE_NAME: PURE_PURE_UBFC_deepphys
-  PLOT_LOSSES_AND_LR: True
+  MODEL_FILE_NAME: PURE_PURE_UBFC_deepphys # required for rPPG-Toolbox
+  PLOT_LOSSES_AND_LR: True # required for rPPG-Toolbox
   DATA:
-    FS: 30
+    FS: 30 # required for rPPG-Toolbox
     DATASET: PURE
     DO_PREPROCESS: False               # if first time, should be true
     DATA_FORMAT: NDCHW

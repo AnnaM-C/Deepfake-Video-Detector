@@ -1,12 +1,12 @@
 BASE: ['']
-TOOLBOX_MODE: "train_and_test"      # "train_and_test"  or "only_test"
+TOOLBOX_MODE: "only_test"      # "train_and_test"  or "only_test"
 TRAIN:
   BATCH_SIZE: 6
   EPOCHS: 25
   LR: 0.0002 # 9e-3
   # MODEL_FILE_NAME: ResNet3D-50_NeuralTextures_pretrained_SGD_LR=0.0001_LRreducer_16_frames
   # MODEL_FILE_NAME: Test_ResNet3D_NeuralTextures_pretrained_SGD_LR=0.00001_LRreducer_16_frames
-  MODEL_FILE_NAME: Xception_NeuralTextures_nopretrain_ADAM_LR=0.0002_batch_6_real_paths_full_dataset_testing
+  MODEL_FILE_NAME: Xception_Face2Face_nopretrain_ADAM_LR=0.0002_batch_6_real_paths_full_dataset_testdata
   PLOT_LOSSES_AND_LR: True
   DATA:
     FS: 30
@@ -68,7 +68,7 @@ TEST:
   USE_LAST_EPOCH: False                     # to use provided validation dataset to find the best epoch, should be false
   DATA:
     FS: 30
-    DATASET: NeuralTextures
+    DATASET: Face2Face
     DO_PREPROCESS: False                    # if first time, should be true
     DATA_FORMAT: NCDHW
     DATA_PATH: "/gscratch/ubicomp/xliu0/data3/mnt/Datasets/PURE/RawData"                     # Raw dataset path, need to be updated
@@ -108,5 +108,5 @@ INFERENCE:
   EVALUATION_WINDOW:
     USE_SMALLER_WINDOW: False        # Change this if you'd like an evaluation window smaller than the test video length
     WINDOW_SIZE: 10        # In seconds
-  MODEL_PATH: ""
-  # MODEL_PATH: "/vol/research/DeepFakeDet/rPPG-Toolbox/runs/exp/logs/Xception_Face2Face_nopretrain_ADAM_LR=0.0002_batch_6_real_paths_full_dataset/PreTrainedModels/Xception_Face2Face_nopretrain_ADAM_LR=0.0002_batch_6_real_paths_full_dataset_Epoch18.pth"
+  # MODEL_PATH: ""
+  MODEL_PATH: "/vol/research/DeepFakeDet/rPPG-Toolbox/runs/exp/logs/Xception_NeuralTextures_nopretrain_ADAM_LR=0.0002_batch_6_real_paths_full_dataset/PreTrainedModels/Xception_NeuralTextures_nopretrain_ADAM_LR=0.0002_batch_6_real_paths_full_dataset_Epoch12.pth"

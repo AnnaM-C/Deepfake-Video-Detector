@@ -1,36 +1,36 @@
+# Refactored from Code Base by https://github.com/ubicomplab/rPPG-Toolbox
 BASE: ['']
 TOOLBOX_MODE: "train_and_test"      # "train_and_test"  or "only_test"
 TRAIN:
   BATCH_SIZE: 6
-  EPOCHS: 50
-  LR: 0.001 # 9e-3
-  # MODEL_FILE_NAME: PhysNet_NeuralTextures__SGD_LR=0.001_LRReducer_32_frames_new_preprocessed_ds_real_paths_more_frames_3
-  MODEL_FILE_NAME: PhysNet_NeuralTextures_SGD_LR=0.001_LRReducer_32_frames_new_preprocessed_ds_real_paths_more_frames_skip_2_random_crop_rotation_test_2
-  PLOT_LOSSES_AND_LR: True
+  EPOCHS: 20
+  LR: 0.001
+  MODEL_FILE_NAME: PhysNet_NeuralTextures_ADAM_LR=0.001_LRReducer_16_frames_0.7binary_0.3rPPG_scaling_multi_model
+  PLOT_LOSSES_AND_LR: True          # required for rPPG-Toolbox
   DATA:
-    FS: 30
-    DATASET: NeuralTextures
-    DO_PREPROCESS: False               # if first time, should be true
-    DATA_FORMAT: NCDHW
-    DATA_PATH: "/gscratch/ubicomp/xliu0/data3/mnt/Datasets/SCAMPS/RawData/Train"          # Raw dataset path, need to be updated
-    CACHED_PATH: "/gscratch/ubicomp/xliu0/data3/mnt/Datasets/rppg_toolbox/PreprocessedData"    # Processed dataset save path, need to be updated
+    FS: 30                          # required for rPPG-Toolbox
+    DATASET: NeuralTextures           # NeuralTextures, Face2Face, FaceShifter, FaceSwap, Deepfakes, DeepFakeChallenge
+    DO_PREPROCESS: False               # required for rPPG-Toolbox
+    DATA_FORMAT: NCDHW                 
+    DATA_PATH: "/vol/research/DeepFakeDet/PURE"          # required for rPPG-Toolbox
+    CACHED_PATH: "/vol/research/DeepFakeDet/PURE/preprocessed"    # required for rPPG-Toolbox
     EXP_DATA_NAME: ""
-    BEGIN: 0.0
-    END: 1.0
+    BEGIN: 0.0                                              # required for rPPG-Toolbox
+    END: 1.0                                                # required for rPPG-Toolbox
     PREPROCESS :
-      DATA_TYPE: ['Raw']         #if use physnet, should be DiffNormalized
-      LABEL_TYPE: Raw
-      DO_CHUNK: True
-      CHUNK_LENGTH: 32                 #only support for factor of 512
-      CROP_FACE:
-        DO_CROP_FACE: False
-        BACKEND: 'HC'    # HC for Haar Cascade, RF for RetinaFace
-        USE_LARGE_FACE_BOX: False
-        LARGE_BOX_COEF: 1.5
-        DETECTION:
-          DO_DYNAMIC_DETECTION: False
+      DATA_TYPE: ['DiffNormalized+Raw']         # if MultiPhysNetModel make DiffNormalized+Raw, for PhysNet use Raw
+      LABEL_TYPE: 'DiffNormalized'              # if MultiPhysNetModel make DiffNormalized, for PhysNet use Raw
+      DO_CHUNK: True                # required for rPPG-Toolbox
+      CHUNK_LENGTH: 16                # only support for factor of 512
+      CROP_FACE:                    # required for rPPG-Toolbox
+        DO_CROP_FACE: False         
+        BACKEND: 'HC'    
+        USE_LARGE_FACE_BOX: False   
+        LARGE_BOX_COEF: 1.5     
+        DETECTION:                 
+          DO_DYNAMIC_DETECTION: False   
           DYNAMIC_DETECTION_FREQUENCY : 32
-          USE_MEDIAN_FACE_BOX: False    # This should be used ONLY if dynamic detection is used
+          USE_MEDIAN_FACE_BOX: False   
       RESIZE:
         H: 128
         W: 128
@@ -38,7 +38,7 @@ VALID:
   DATA:
     FS: 30
     DATASET: NeuralTextures
-    DO_PREPROCESS: False                  # if first time, should be true
+    DO_PREPROCESS: False                  # required for rPPG-Toolbox
     DATA_FORMAT: NCDHW
     DATA_PATH: "/gscratch/ubicomp/xliu0/data3/mnt/Datasets/SCAMPS/RawData/Val"          # Raw dataset path, need to be updated
     CACHED_PATH: "/gscratch/ubicomp/xliu0/data3/mnt/Datasets/rppg_toolbox/PreprocessedData"    # Processed dataset save path, need to be updated
@@ -46,29 +46,29 @@ VALID:
     BEGIN: 0.0
     END: 1.0
     PREPROCESS :
-      DATA_TYPE: ['Raw']         #if use physnet, should be DiffNormalized
-      LABEL_TYPE: Raw
+      DATA_TYPE: ['DiffNormalized+Raw']         #if MultiPhysNetModel, should be DiffNormalized+Raw, for PhysNet use Raw
+      LABEL_TYPE: 'DiffNormalized'              #if MultiPhysNetModel DiffNormalized
       DO_CHUNK: True
-      CHUNK_LENGTH: 32                 #only support for factor of 512
-      CROP_FACE:
+      CHUNK_LENGTH: 16                #only support for factor of 512
+      CROP_FACE:                    # required for rPPG-Toolbox
         DO_CROP_FACE: False
-        BACKEND: 'HC'    # HC for Haar Cascade, RF for RetinaFace
+        BACKEND: 'HC' 
         USE_LARGE_FACE_BOX: False
         LARGE_BOX_COEF: 1.5
         DETECTION:
           DO_DYNAMIC_DETECTION: False
           DYNAMIC_DETECTION_FREQUENCY : 32
-          USE_MEDIAN_FACE_BOX: False    # This should be used ONLY if dynamic detection is used
+          USE_MEDIAN_FACE_BOX: False  
       RESIZE:
         H: 128
         W: 128
 TEST:
-  METRICS: ['MAE', 'RMSE', 'MAPE', 'Pearson', 'SNR', 'BA']
+  METRICS: ['MAE', 'RMSE', 'MAPE', 'Pearson', 'SNR', 'BA']  # required for rPPG-Toolbox
   USE_LAST_EPOCH: False                     # to use provided validation dataset to find the best epoch, should be false
   DATA:
     FS: 30
     DATASET: NeuralTextures
-    DO_PREPROCESS: False                    # if first time, should be true
+    DO_PREPROCESS: False                   # required for rPPG-Toolbox
     DATA_FORMAT: NCDHW
     DATA_PATH: "/gscratch/ubicomp/xliu0/data3/mnt/Datasets/PURE/RawData"                     # Raw dataset path, need to be updated
     CACHED_PATH: "/gscratch/ubicomp/xliu0/data3/mnt/Datasets/rppg_toolbox/PreprocessedData"    # Processed dataset save path, need to be updated
@@ -76,19 +76,19 @@ TEST:
     BEGIN: 0.0
     END: 1.0
     PREPROCESS :
-      DATA_TYPE: ['Raw']         #if use physnet, should be DiffNormalized
-      LABEL_TYPE: Raw
-      DO_CHUNK: True
-      CHUNK_LENGTH: 32                 #only support for factor of 512
-      CROP_FACE:
+      DATA_TYPE: ['DiffNormalized+Raw']   # if MultiPhysNetModel, should be DiffNormalized+Raw, for PhysNet use Raw
+      LABEL_TYPE: 'DiffNormalized'              # if MultiPhysNetModel use DiffNormalized, for PhysNet use Raw
+      DO_CHUNK: True              # required for rPPG-Toolbox
+      CHUNK_LENGTH: 16            # only support for factor of 512
+      CROP_FACE:                # required for rPPG-Toolbox
         DO_CROP_FACE: False
-        BACKEND: 'HC'    # HC for Haar Cascade, RF for RetinaFace
+        BACKEND: 'HC'    
         USE_LARGE_FACE_BOX: False
         LARGE_BOX_COEF: 1.5
         DETECTION:
           DO_DYNAMIC_DETECTION: False
           DYNAMIC_DETECTION_FREQUENCY : 32
-          USE_MEDIAN_FACE_BOX: False    # This should be used ONLY if dynamic detection is used
+          USE_MEDIAN_FACE_BOX: False
       RESIZE:
         H: 128
         W: 128
@@ -97,15 +97,14 @@ NUM_OF_GPU_TRAIN: 1
 LOG:
   PATH: runs/exp/logs
 MODEL:
-  DROP_RATE: 0.2
-  NAME: Physnet
+  DROP_RATE: 0.2          
+  NAME: MultiPhysNetModel #MultiPhysNetModel / Physnet
   PHYSNET:
-    FRAME_NUM: 32
-INFERENCE:
+    FRAME_NUM: 16
+INFERENCE:      
   BATCH_SIZE: 6
-  EVALUATION_METHOD: "FFT"        # "FFT" or "peak detection"
-  EVALUATION_WINDOW:
-    USE_SMALLER_WINDOW: False        # Change this if you'd like an evaluation window smaller than the test video length
-    WINDOW_SIZE: 10        # In seconds
+  EVALUATION_METHOD: "FFT"        # required for rPPG-Toolbox
+  EVALUATION_WINDOW:              # required for rPPG-Toolbox
+    USE_SMALLER_WINDOW: False  
+    WINDOW_SIZE: 10   
   MODEL_PATH: ""
-  # MODEL_PATH:   "PhysNet_NeuralTextures_SGD_LR=0.001_LRReducer_32_frames_new_preprocessed_ds_real_paths_more_frames_interative_Epoch5.pth"

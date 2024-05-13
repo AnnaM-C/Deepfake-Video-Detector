@@ -38,7 +38,7 @@ MODEL:
   DROP_RATE: 0.2
   NAME: Physnet
   PHYSNET:
-    FRAME_NUM: 32
+    FRAME_NUM: 16
 INFERENCE:
   BATCH_SIZE: 4
   EVALUATION_METHOD: FFT        # "FFT" or "peak detection"
