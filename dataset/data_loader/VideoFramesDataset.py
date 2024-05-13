@@ -10,6 +10,7 @@ from torch.utils.data import Dataset
 import os
 from PIL import Image
 import random
+import pandas as pd
 
 # # class VideoFramesDataset(Dataset):
 # #     def __init__(self, root_path, splits_file, transform=None, chunk_size=32):
@@ -258,13 +259,13 @@ import random
 #             sample = sample.permute(1, 0, 2, 3)
 #         return sample, label, video_idx
 
-import os
-import torch
-import numpy as np
-from PIL import Image
-import bisect
-import matplotlib.pyplot as plt
-from torch.utils.data import Dataset
+# import os
+# import torch
+# import numpy as np
+# from PIL import Image
+# import bisect
+# import matplotlib.pyplot as plt
+# from torch.utils.data import Dataset
 
 # Class for overlapping chunks - added diff normalisation
 class VideoFramesDataset(Dataset):
@@ -279,6 +280,7 @@ class VideoFramesDataset(Dataset):
         transform,
         max_frames_per_video,
         compression='c23',
+        rPPG_csv_path=None,
     ):
         self.frames_per_clip = frames_per_clip
         self.videos_per_type = {}
@@ -288,27 +290,40 @@ class VideoFramesDataset(Dataset):
         self.config = config
         self.paths = []
         self.clips_per_video = []
-        print("real videos, ", real_videos)
+
+        if rPPG_csv_path is not None:
+            df = pd.read_csv(rPPG_csv_path)
+            df['rPPG_values'] = df['rPPG_values'].apply(lambda x: [float(val) for val in x.replace(',', '').split()])
+            # print(df)
+            # print(cxv)
+            self.frame_to_rppg = pd.Series(df.rPPG_values.values, index=df.frame_path).to_dict()
+            # print("Frame to rppg*, ", self.frame_to_rppg)
+        else:
+            self.frame_to_rppg = {}
+
         ds_methods = ['youtube'] + dataset_names
         for ds_method in ds_methods:
             ds_type = 'original_sequences' if ds_method == 'youtube' else 'manipulated_sequences'
             videos = sorted(real_videos if ds_method == 'youtube' else fake_videos_file_paths[ds_method])
+
             video_paths = os.path.join('/vol/research/DeepFakeDet/notebooks/FaceForensics++', ds_type, ds_method, compression, 'frames')
             self.videos_per_type[ds_method] = len(videos)
 
             for video in videos:
                 path = os.path.join(video_paths, video)
                 num_frames = min(len(os.listdir(path)), max_frames_per_video)
+                # print("Frames per clip, ", frames_per_clip)
+                # print("Num frames per video, ", num_frames)
                 # interval of 2 frames
                 num_clips = ((num_frames - frames_per_clip) // 2) + 1 if num_frames >= frames_per_clip else 0
                 self.clips_per_video.append(num_clips)
                 self.paths.append(path)
-        print("clips per video, ", self.clips_per_video)
+        # print("clips per video, ", self.clips_per_video)
 
         self.cumulative_sizes = [sum(self.clips_per_video[:i+1]) for i in range(len(self.clips_per_video))]
-        print("From videoloader print [-1] cummulative: ", self.cumulative_sizes[-1])
-        print("From videoloader print length cummulative: ", len(self.cumulative_sizes))
-        print("Cummulative list, ", self.cumulative_sizes)
+        # print("From videoloader print [-1] cummulative: ", self.cumulative_sizes[-1])
+        # print("From videoloader print length cummulative: ", len(self.cumulative_sizes))
+        # print("Cummulative list, ", self.cumulative_sizes)
     # Every 4
     # def __init__(
     #     self,
@@ -353,9 +368,9 @@ class VideoFramesDataset(Dataset):
 
         
     def __len__(self):
-        print("From videoloader print [-1] cummulative: ", self.cumulative_sizes[-1])
-        print("From videoloader print length cummulative: ", len(self.cumulative_sizes))
-        print("Cummulative list, ", self.cumulative_sizes)
+        # print("From videoloader print [-1] cummulative: ", self.cumulative_sizes[-1])
+        # print("From videoloader print length cummulative: ", len(self.cumulative_sizes))
+        # print("Cummulative list, ", self.cumulative_sizes)
 
         return self.cumulative_sizes[-1]
     
@@ -386,7 +401,16 @@ class VideoFramesDataset(Dataset):
             bottom = height
             pil_img_cropped = pil_img.crop((left, top, right, bottom))
             return pil_img_cropped
-
+    
+    @staticmethod
+    def diff_normalize_label(label):
+        """Calculate discrete difference in labels along the time-axis and normalize by its standard deviation."""
+        diff_label = np.diff(label, axis=0)
+        diffnormalized_label = diff_label / np.std(diff_label)
+        diffnormalized_label = np.append(diffnormalized_label, np.zeros(1), axis=0)
+        diffnormalized_label[np.isnan(diffnormalized_label)] = 0
+        return diffnormalized_label
+    
     # # Consecutive frames
     # def get_clip(self, idx):
     #     video_idx = bisect.bisect_right(self.cumulative_sizes, idx)
@@ -437,12 +461,10 @@ class VideoFramesDataset(Dataset):
     # adapt to return frame paths
     def get_clip(self, idx):
         video_idx = bisect.bisect_right(self.cumulative_sizes, idx)
-        print("Video index, ", video_idx)
         clip_idx = idx - self.cumulative_sizes[video_idx - 1] if video_idx > 0 else idx
         path = self.paths[video_idx]
         frames = [f for f in sorted(os.listdir(path)) if not f.startswith('._')]
 
-        # TODO: rotation
         rotation_angle = random.uniform(-5, 5)
         crop_percents = {
             'left': random.uniform(0, 0.20),
@@ -458,10 +480,8 @@ class VideoFramesDataset(Dataset):
             return None, video_idx
 
         sample = []
-        frame_filepaths = []
+        frame_filepath = os.path.join(path, frames[start_idx])
         for idx in range(start_idx, end_idx):
-            frame_path = os.path.join(path, frames[idx])
-            frame_filepaths.append(frame_path)
             with Image.open(os.path.join(path, frames[idx])) as pil_img:
                 #NOTE: rotation
                 pil_img_rotated = pil_img.rotate(rotation_angle)
@@ -470,13 +490,16 @@ class VideoFramesDataset(Dataset):
                 sample.append(img)
 
         sample = np.stack(sample)
+        diff_sample=np.empty(0)
         if self.config.TEST.DATA.PREPROCESS.DATA_TYPE[0] == 'DiffNormalized':
-            # print("Diff Normalise")
-            # print(sample.shape)
             sample = self.diff_normalize_data(sample)
+        if self.config.TEST.DATA.PREPROCESS.DATA_TYPE[0] == 'DiffNormalized+Raw':
+            diff_sample = self.diff_normalize_data(sample)
+
         if self.transform is None:
             sample = torch.from_numpy(sample)
-        return sample, video_idx, frame_filepaths
+
+        return sample, video_idx, frame_filepath, diff_sample
     
     def save_clip_plots(self, idx, save_dir, frames_to_show=5):
         """
@@ -489,46 +512,54 @@ class VideoFramesDataset(Dataset):
         """
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
-        print("Video index as argument, ", idx)
-        sample, video_idx, _ = self.get_clip(idx)
+
+        sample, video_idx, _, _ = self.get_clip(idx)
         path = self.paths[video_idx]
         frames = sorted(os.listdir(path))
 
-        label = '0' if video_idx < self.videos_per_type['youtube'] else '1'
+        label_binary = '0' if video_idx < self.videos_per_type['youtube'] else '1'
 
-        # Ensure we are showing consecutive frames starting from the beginning of the chunk
         for frame_idx in range(frames_to_show):
             if frame_idx >= len(sample):
-                break  # avoid going above the available number of frames
+                break 
 
-            # image_np = sample[frame_idx].cpu().numpy()  #convert to np
             image_np = sample[frame_idx]
 
             image_np = np.transpose(image_np, (1, 2, 0)) #rearrange from (C, H, W) to (H, W, C)
 
-            # filepath = os.path.join(path, frames[frame_idx])
-            # plt.figure(figsize=(10, 8))
-            # plt.imshow(sample[frame_idx])
-            # plt.title(f'Clip {idx} - Frame {frame_idx}\nPath: {filepath}\nLabel: {label}', fontsize=8)
-            # plt.axis('off')
-            # safe_filename = filepath.replace('/', '_').replace('\\', '_')
-            # plt.savefig(os.path.join(save_dir, f'Label_{label}_Clip_{idx}_Frame_{frame_idx}_{safe_filename}.png'))
-            # plt.close()
             plt.figure(figsize=(10, 8))
             plt.imshow(image_np)
-            plt.title(f'Clip {idx} - Frame {frame_idx}\nPath: {path}\nLabel: {label}\nCrop boarders 15%', fontsize=8)
+            plt.title(f'Clip {idx} - Frame {frame_idx}\nPath: {path}\nLabel: {label_binary}\nCrop boarders 20%', fontsize=8)
             plt.axis('off')
             safe_filename = path.replace('/', '_').replace('\\', '_') + f'_Frame_{frame_idx}.png'
-            plt.savefig(os.path.join(save_dir, f'Label_{label}_Clip_{idx}_{safe_filename}'))
+            plt.savefig(os.path.join(save_dir, f'Label_{label_binary}_Clip_{idx}_test_{safe_filename}'))
             plt.close()
 
     def __getitem__(self, idx):
-        sample, video_idx, frame_filepaths = self.get_clip(idx)
-        label = 0 if video_idx < self.videos_per_type['youtube'] else 1
+        sample, video_idx, frame_filepath, diff_sample = self.get_clip(idx)
+        if video_idx < self.videos_per_type['youtube']:
+            label_binary = 0
+            if self.frame_to_rppg:
+                rPPG_values = self.frame_to_rppg.get(frame_filepath, [])
+                #NOTE: diffnormalise
+                if self.config.TEST.DATA.PREPROCESS.LABEL_TYPE == 'DiffNormalized':
+                    rPPG_values = self.diff_normalize_label(rPPG_values)
+                rPPG_tensor = torch.tensor(rPPG_values, dtype=torch.float)
+            else:
+                rPPG_tensor=[]
+        else:
+            label_binary = 1
+            if self.frame_to_rppg:
+                rPPG_tensor = torch.zeros(self.frames_per_clip, dtype=torch.float)
+            else:
+                rPPG_tensor=[]
+
         sample = torch.from_numpy(sample)
-        label = torch.tensor(label, dtype=torch.long)
+
+        label_binary = torch.tensor(label_binary, dtype=torch.long)
         if self.config.MODEL.NAME == "Physnet":
             #NOTE: for PhysNet only
             sample = sample.permute(1, 0, 2, 3)
-        return sample, label, video_idx, frame_filepaths
-    
+            if diff_sample:
+                diff_sample = diff_sample.permute(1,0,2,3)
+        return sample, label_binary, video_idx, frame_filepath, diff_sample, rPPG_tensor
