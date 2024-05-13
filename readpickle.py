@@ -1,6 +1,7 @@
 import pickle
 
-pickle_file_path = 'runs/exp/logs/Xception_Face2Face_nopretrain_ADAM_LR=0.0002_batch_6_real_paths_full_dataset/Face2Face/saved_test_outputs/Xception_Face2Face_nopretrain_ADAM_LR=0.0002_batch_6_real_paths_full_dataset_Epoch18_Face2Face_outputs.pickle'
+# pickle_file_path = '/vol/research/DeepFakeDet/rPPG-Toolbox/runs/exp/logs/PhysNet_Face2Face_ADAM_LR=0.001_LRReducer_16_frames_0.5binary_0.5rPPG_scaling_0.001_0.0001_LR_multi_model_epoch11_test/Face2Face/saved_test_outputs/PhysNet_NeuralTextures_ADAM_LR=0.001_LRReducer_16_frames_0.5binary_0.5rPPG_scaling_0.001_0.0001_LR_multi_model_Epoch11_Face2Face_outputs.pickle'
+pickle_file_path="/vol/research/DeepFakeDet/rPPG-Toolbox/runs/exp/logs/PhysNet_NeuralTextures_ADAM_LR=0.001_LRReducer_16_frames_0.3binary_0.7rPPG_scaling_multi_model/NeuralTextures/saved_test_outputs/PhysNet_NeuralTextures_ADAM_LR=0.001_LRReducer_16_frames_0.3binary_0.7rPPG_scaling_multi_model_outputs.pickle"
 
 def load_pickle_data(file_path):
     with open(file_path, 'rb') as file:
