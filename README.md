@@ -69,7 +69,7 @@ STEP 2: `conda activate DeepFakeDet`
 
 STEP 3: `pip install -r requirements.txt` 
 
-# :ballot_box_with_check: Best Model Pretrained Weights
+# :white_check_mark: Best Model Pretrained Weights
 
 DeepFakePhys: `pretrained/best_trained_deepfakephysclassifier.pth`
 
@@ -88,7 +88,7 @@ STEP 4: run `create_split_filepaths.py` from this repository under `Utils` and p
 # :wrench: rPPG Ground Truth Labels
 To obtain rPPG labels from the dataset we perform the below steps.
 
-STEP 1: Obtain pre-trained weights `UBFC-rPPG_PhysNet_DiffNormalized.pth` from (https://github.com/ubicomplab/rPPG-Toolbox) and put them under `final_model_release`
+STEP 1: Obtain pre-trained weights `UBFC-rPPG_PhysNet_DiffNormalized.pth` from (https://github.com/ubicomplab/rPPG-Toolbox) or find them under `final_model_release`
 
 STEP 1: Run `python main.py --config_file ./configs/infer_configs/PURE_UBFC-rPPG_PHYSNET_BASIC.yaml`
 
