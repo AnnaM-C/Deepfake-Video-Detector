@@ -46,5 +46,7 @@ final_model_release/PURE_PhysNet_DiffNormalized.pth
 !final_model_release/.gitkeep
 !pretrained/.gitkeep
 !runs/.gitkeep
+!runs/exp/
 !runs/exp/.gitkeep
+!runs/exp/logs/
 !runs/exp/logs/.gitkeep
