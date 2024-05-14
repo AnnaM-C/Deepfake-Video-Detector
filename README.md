@@ -71,7 +71,9 @@ STEP 3: `pip install -r requirements.txt`
 
 # :heavy_check_mark: Best Model Pretrained Weights
 
-Please download from x
+DeepFakePhys: `pretrained/best_trained_deepfakephysclassifier.pth`
+
+Mult-Model PhysNet (MMP): `pretrained/best_trained_multimodelphysnet.pth`
 
 # :wrench: Preprocessing
 
