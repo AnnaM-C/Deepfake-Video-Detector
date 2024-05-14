@@ -2,16 +2,16 @@
 
 # :wave: Introduction
 
-**rDeep Fake Detection** this is research project that explores PhysNet as a backbone and rPPG also known as remote photoplethysmography(rPPG) for deepfake detection. 
+**Deep Fake Detection** this research project explores PhysNet as a backbone and rPPG biomarkers also known as remote photoplethysmography(rPPG) for deepfake detection. 
 
 ![Overview of Multi-Model PhysNet](./figures/MultiModel.png)
 
 Comparisons benchmarks with **existing state-of-the-art networks** are make and as well as the training of the network and testing ability.
 
 # :file_folder: Datasets
-The toolbox supports six deepfake datasets part of FF++ dataset namely Neural Textures, Face2Face, FaceSwap, FaceShifter, Deepfakes, and DeepFake Detection. Our network was trained with Neural Textures and paired real videos and tested with Face2Face. **To use these datasets in a deep learning network, download the FF++ dataset from the original repository below and organize the files as follows.** This will give you the videos. Follow the below preprocessing steps below to create the frames, landmark and split.txt files.
+The toolbox supports five deepfake datasets part of FF++ dataset namely Neural Textures, Face2Face, FaceSwap, FaceShifter, Deepfakes, and DeepFake Detection. Our network was trained with Neural Textures and paired real videos and tested with Face2Face. **To use these datasets in a deep learning network, download the FF++ dataset from the original repository below and the train/val/test json files for splitting the data and organize the files as follows.** This will give you the videos. Follow the below preprocessing steps below to create the frames, landmarks and split text files.
 * [FF++](https://github.com/ondyari/FaceForensics/blob/master/dataset/README.md)
-    * A. Rössler, D. Cozzolino, L. Verdoliva, C. Riess, J. Thies, and M. Nießner, “Faceforen- sics++: Learning to detect manipulated facial images,” CoRR, vol. abs/1901.08971, 2019. arXiv: 1901.08971. [Online]. Available: http://arxiv.org/abs/1901.08971.
+    * A. Rössler, D. Cozzolino, L. Verdoliva, C. Riess, J. Thies, and M. Nießner, “Faceforensics++: Learning to detect manipulated facial images,” CoRR, vol. abs/1901.08971, 2019. arXiv: 1901.08971. [Online]. Available: http://arxiv.org/abs/1901.08971.
     -----------------
          - notebooks/
             |-- FaceForensics++/
@@ -55,6 +55,9 @@ The toolbox supports six deepfake datasets part of FF++ dataset namely Neural Te
             |   |-- FaceSwap/
             |   |-- Face2Face/
             |   |-- FaceShifter/
+            |-- train.json
+            |-- val.json
+            |-- test.json
 
     -----------------
 
@@ -72,15 +75,20 @@ STEP 1: Go to https://github.com/SCLBD/DeepfakeBench/blob/main/README.md#3-prepr
 
 STEP 2: run `python preprocess.py`
 
+STEP 3: obtain the json train/val/test split file from FF++ (https://github.com/ondyari/FaceForensics/blob/master/dataset/README.md) and save it under the root folder (FaceForensics++)
+
+STEP 4: run `create_split_filepaths.py` from this repository under `Utils` and provide the argument `--root file_path_to_FaceForensics++` to create the train/valid/test split text files
 
 # :wrench: rPPG Ground Truth Labels
 To obtain rPPG labels from the dataset we perform the below steps.
+
+STEP 1: Obtain pre-trained weights `UBFC-rPPG_PhysNet_DiffNormalized.pth` from (https://github.com/ubicomplab/rPPG-Toolbox) and put them under `final_model_release`
 
 STEP 1: Run `python main.py --config_file ./configs/infer_configs/PURE_UBFC-rPPG_PHYSNET_BASIC.yaml`
 
 <!-- STEP 2: Run `python text_to_csv.py` -->
 
-# :computer: Network Training
+# :computer: Network Training and Testing
 
 Please use config files under `./configs/train_configs`
 
@@ -93,6 +101,29 @@ STEP 2: Run `python main.py --config_file ./configs/train_configs/UBFC_FF_PHYSNE
 Note 1: To train a single PhysNet backbone classifier which we call DeepFakePhys, replace the model name `MultiPhysNetModel` with `PhysNet`.
 
 Note 2: The following configs are used for training 3DResNet-18 and XceptionNet, KINETICS_FF_RESNET3D_BASIC.yaml and NOPRETRAIN_FF_XCEPTION_BASIC.yaml respectively.
+
+## Testing on Face2Face With Multi-Model PhysNet
+
+STEP 1: Modify `./configs/train_configs/UBFC_FF_PHYSNET_BASIC.yaml` 
+
+STEP 2: Run `python main.py --config_file ./configs/train_configs/UBFC_FF_PHYSNET_BASIC.yaml`
+
+Note 1: Change `train_and_test` to `only_test`
+
+# :computer: Benchmark Training and Testing
+
+## XceptionNet:
+
+STEP 1: Modify `./configs/train_configs/NOPRETRAIN_FF_XCEPTION_BASIC.yaml` 
+
+STEP 2: Run `python main.py --config_file ./configs/train_configs/NOPRETRAIN_FF_XCEPTION_BASIC.yaml` 
+
+## 3DResNet-18:
+
+STEP 1: Modify `./configs/train_configs/KINETICS_FF_RESNET3D_BASIC.yaml` 
+
+STEP 2: Run `python main.py --config_file ./configs/train_configs/KINETICS_FF_RESNET3D_BASIC.yaml` 
+
 
 ## Testing on Face2Face With Multi-Model PhysNet
 
@@ -127,8 +158,17 @@ Here are some explanation of parameters:
 # Acknowledgements
 
 [PhysNet]
+```
+@inproceedings{yu2019remote,
+    title={Remote Photoplethysmograph Signal Measurement from Facial Videos Using Spatio-Temporal Networks},
+    author={Yu, Zitong and Li, Xiaobai and Zhao, Guoying},
+    booktitle= {Proc. BMVC},
+    year = {2019}
+}
+```
 
-[rPPG-Toolbox] rPPG Toolbox has been reused in this project which is why it is in here.
+[rPPG-Toolbox] 
+rPPG Toolbox has been reused in this project which is why the original files feature heavily in our repository.
 ```
 @article{liu2022rppg,
   title={rPPG-Toolbox: Deep Remote PPG Toolbox},
