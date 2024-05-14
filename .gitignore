@@ -21,6 +21,10 @@ debug_utils_physnet.py
 test.yaml
 pretrained/*
 final_model_release/*
+Exp1/CardioVtLogs
+Exp1/chunks
+Exp1/images
+Exp1/logs
 tools/*
 ._*
 Utils/._
@@ -31,12 +35,8 @@ tools/preprocessing_viz
 final_model_release/PURE_PhysNet_DiffNormalized.pth
 
 !results_0/graphs/
-!Exp1/cmatrix/.gitkeep
-!Exp1/cmatrix/test/.gitkeep
-!Exp1/cmatrix/test/Final
 !dlib_tools/.gitkeep
 !tools/.gitkeep
-!Exp1/.gitkeep
 !final_model_release/.gitkeep
 !pretrained/.gitkeep
 !runs/.gitkeep
