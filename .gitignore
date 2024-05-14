@@ -21,10 +21,11 @@ debug_utils_physnet.py
 test.yaml
 pretrained/*
 final_model_release/*
-Exp1/CardioVtLogs
-Exp1/chunks
-Exp1/images
-Exp1/logs
+Exp1/CardioVtLogs/*
+Exp1/cmatrix/*
+Exp1/chunks/*
+Exp1/images/*
+Exp1/logs/*
 tools/*
 ._*
 Utils/._
