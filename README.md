@@ -69,7 +69,7 @@ STEP 2: `conda activate DeepFakeDet`
 
 STEP 3: `pip install -r requirements.txt` 
 
-# :play: Best Model Pretrained Weights
+# :fast_forward: Best Model Pretrained Weights
 
 Please download from x
 
