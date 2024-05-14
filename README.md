@@ -69,7 +69,7 @@ STEP 2: `conda activate DeepFakeDet`
 
 STEP 3: `pip install -r requirements.txt` 
 
-# :heavy_check_mark: Best Model Pretrained Weights
+# :ballot_box_with_check: Best Model Pretrained Weights
 
 DeepFakePhys: `pretrained/best_trained_deepfakephysclassifier.pth`
 
