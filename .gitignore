@@ -29,11 +29,11 @@ Exp1/cmatrix/test/*
 Exp1/chunks/*
 Exp1/chunks/train/*
 Exp1/chunks/test/*
+Exp1/chunks/test/rPPG/*
 Exp1/chunks/valid/*
 Exp1/images/*
 Exp1/images/train/*
 Exp1/images/test/*
-Exp1/images/test/rPPG/*
 Exp1/images/valid/*
 Exp1/logs/*
 tools/*
