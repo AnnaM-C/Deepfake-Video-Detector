@@ -6,9 +6,9 @@
 
 ![Overview of Multi-Model PhysNet](./figures/MultiModel.png)
 
-Comparisons benchmarks with **existing state-of-the-art networks** are make and as well as the training of the network and testing ability.
+Comparisons benchmarks with **existing state-of-the-art networks** are made and as well as the training of the network and testing.
 
-# :file_folder: Datasets
+# :file_folder: Dataset
 The toolbox supports five deepfake datasets part of FF++ dataset namely Neural Textures, Face2Face, FaceSwap, FaceShifter, Deepfakes, and DeepFake Detection. Our network was trained with Neural Textures and paired real videos and tested with Face2Face. **To use these datasets in a deep learning network, download the FF++ dataset from the original repository below and the train/val/test json files for splitting the data and organize the files as follows.** This will give you the videos. Follow the below preprocessing steps below to create the frames, landmarks and split text files.
 * [FF++](https://github.com/ondyari/FaceForensics/blob/master/dataset/README.md)
     * A. Rössler, D. Cozzolino, L. Verdoliva, C. Riess, J. Thies, and M. Nießner, “Faceforensics++: Learning to detect manipulated facial images,” CoRR, vol. abs/1901.08971, 2019. arXiv: 1901.08971. [Online]. Available: http://arxiv.org/abs/1901.08971.
@@ -69,7 +69,7 @@ STEP 2: `conda activate DeepFakeDet`
 
 STEP 3: `pip install -r requirements.txt` 
 
-# :fast_forward: Best Model Pretrained Weights
+# :heavy_check_mark: Best Model Pretrained Weights
 
 Please download from x
 
