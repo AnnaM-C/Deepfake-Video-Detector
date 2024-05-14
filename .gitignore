@@ -68,3 +68,5 @@ final_model_release/PURE_PhysNet_DiffNormalized.pth
 !Exp1/chunks/test/
 !Exp1/chunks/test/rPPG/.gitkeep
 !Exp1/chunks/train/.gitkeep
+!pretrained/best_trained_deepfakephysclassifier.pth
+!pretrained/best_trained_multimodelphysnet.pth

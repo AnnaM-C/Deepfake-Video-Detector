@@ -79,7 +79,7 @@ STEP 1: go to https://github.com/SCLBD/DeepfakeBench/blob/main/README.md#3-prepr
 
 STEP 2: run `python preprocess.py`
 
-STEP 3: obtain the json train/val/test split file from FF++ (https://github.com/ondyari/FaceForensics/blob/master/dataset/README.md) and save it under the root folder (FaceForensics++)
+STEP 3: obtain the json train/val/test split file from FF++ (https://github.com/ondyari/FaceForensics/blob/master/dataset/README.md) and save it under your root folder (FaceForensics++)
 
 STEP 4: run `create_split_filepaths.py` from this repository under `Utils` and provide the argument `--root file_path_to_FaceForensics++` to create the train/valid/test split text files
 
@@ -102,13 +102,13 @@ In the `main.py` file change the paths linking to training/validation/testing sp
 
 STEP 1: Modify `./configs/train_configs/UBFC_FF_PHYSNET_BASIC.yaml`
 
-STEP 2: Update `MODEL_PATH:` to `"final_model_release/UBFC-rPPG_PhysNet_DiffNormalized.pth`
+STEP 2: Update `MODEL_PATH` to `"final_model_release/UBFC-rPPG_PhysNet_DiffNormalized.pth`
 
 STEP 3: Run `python main.py --config_file ./configs/train_configs/UBFC_FF_PHYSNET_BASIC.yaml` 
 
 Note 1: To train a single PhysNet backbone classifier which we call DeepFakePhys, replace the model name `MultiPhysNetModel` with `PhysNet`.
 
-Note 2: The following configs are used for training 3DResNet-18 and XceptionNet, KINETICS_FF_RESNET3D_BASIC.yaml and NOPRETRAIN_FF_XCEPTION_BASIC.yaml respectively.
+Note 2: The following configs are used for training 3DResNet-18 and XceptionNet `KINETICS_FF_RESNET3D_BASIC.yaml` and `NOPRETRAIN_FF_XCEPTION_BASIC.yaml`, respectively.
 
 ## Testing on Face2Face With Multi-Model PhysNet
 
@@ -148,8 +148,10 @@ Here are some explanation of parameters:
   * `CHUNK_LENGTH`: The length of each chunk (number of frames) which are changed during experimentation with different chunk sizes 
   * `NAME`: Model name to test
   
-* #### MODEL : Set used model (XceptionNet, DeepFakePhys, 3D-ResNet18, Multi-Model PhysNet are supported).
-* #### METRICS: Set used metrics. Example: ['AUC','Accuracy','Precision','Recall','F1-Score']
+* #### MODEL : 
+  * Set used model (XceptionNet, DeepFakePhys, 3D-ResNet18, Multi-Model PhysNet are supported).
+* #### METRICS:
+  * Set used metrics. Example: ['AUC','Accuracy','Precision','Recall','F1-Score']
 
 # :scroll: Citations
 
@@ -167,7 +169,6 @@ Here are some explanation of parameters:
 ```
 
 [rPPG-Toolbox] 
-rPPG Toolbox has been reused in this project which is why the original files feature heavily in our repository.
 ```
 @article{liu2022rppg,
   title={rPPG-Toolbox: Deep Remote PPG Toolbox},
@@ -176,6 +177,7 @@ rPPG Toolbox has been reused in this project which is why the original files fea
   year={2022}
 }
 ```
+rPPG Toolbox has been reused in this project which is why the original files feature heavily in our repository.
 
 # Issues
 I encountered challenges with Condor's interaction with Git and private GitHub repositories. As a result the commits were uploaded to GitHub at a later date rather than being pushed consistently during development. Additionally due to the experimental nature of the project, involving multiple models and the creation of new ones, maintaining an up-to-date Git repository was challenging. The objective was research-oriented rather than focused on front-end or back-end development.
