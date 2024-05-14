@@ -11,6 +11,8 @@ store_physnet_model
 PreprocessedData
 PreTrainedModels
 runs/*
+runs/exp/*
+runs/exp/logs*
 temp
 facial_region_test.py
 interp_test.py
