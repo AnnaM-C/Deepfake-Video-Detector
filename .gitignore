@@ -30,10 +30,14 @@ results_0/*
 dlib_tools/*
 tools/preprocessing_viz
 final_model_release/PURE_PhysNet_DiffNormalized.pth
+
 !results_0/graphs/
+!Exp1/cmatrix/test/Final
 !dlib_tools/.gitkeep
 !tools/.gitkeep
 !Exp1/.gitkeep
 !final_model_release/.gitkeep
 !pretrained/.gitkeep
 !runs/.gitkeep
+!runs/exp/.gitkeep
+!runs/exp/logs/.gitkeep
