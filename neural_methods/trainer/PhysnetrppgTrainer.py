@@ -92,7 +92,7 @@ class PhysnetrppgTrainer(BaseTrainer):
                     ]
                     csv_data.append(row)
         
-        csv_file_path = 'rppgpredictions_testset2.csv'
+        csv_file_path = 'rPPG_predictions/rppgpredictions_testset2.csv'
         with open(csv_file_path, 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerows(csv_data)

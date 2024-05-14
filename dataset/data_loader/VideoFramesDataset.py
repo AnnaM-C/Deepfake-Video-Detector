@@ -270,17 +270,17 @@ class VideoFramesDataset(Dataset):
 
     def crop_frame(self, pil_img, left, top, right, bottom):
         """ Crop the frame """
-            width, height = pil_img.size
-            # left = width * 0.20
-            # top = height * 0.20
-            # right = width * 0.80
-            # bottom = height
-            left = width * left
-            top = height * top
-            right = width - (width * right)
-            bottom = height
-            pil_img_cropped = pil_img.crop((left, top, right, bottom))
-            return pil_img_cropped
+        width, height = pil_img.size
+        # left = width * 0.20
+        # top = height * 0.20
+        # right = width * 0.80
+        # bottom = height
+        left = width * left
+        top = height * top
+        right = width - (width * right)
+        bottom = height
+        pil_img_cropped = pil_img.crop((left, top, right, bottom))
+        return pil_img_cropped
     
     @staticmethod
     def diff_normalize_label(label):

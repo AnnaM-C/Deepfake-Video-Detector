@@ -194,9 +194,9 @@ if __name__ == "__main__":
 
     if (config.MODEL.NAME == "MultiPhysNetModel"):
             # file contains 32 frames skipping 2: rPPG training labels - real
-            rPPG_train_path='rppgpredictions_16frames_train_final.csv'
-            rPPG_valid_path='rppgpredictions_16frames_valid_final.csv'
-            rPPG_test_path='rppgpredictions_16frames_test_final.csv'
+            rPPG_train_path='rPPG_predictions/rppgpredictions_16frames_train_final.csv'
+            rPPG_valid_path='rPPG_predictions/rppgpredictions_16frames_valid_final.csv'
+            rPPG_test_path='rPPG_predictions/rppgpredictions_16frames_test_final.csv'
     else:
             rPPG_train_path=None
             rPPG_valid_path=None

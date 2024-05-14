@@ -1,10 +1,10 @@
 import csv
 
 # text file containing the data
-data_file_path = 'rppgpredictions_16frames_trainset2.txt' 
+data_file_path = 'rPPG_predictions/rppgpredictions_16frames_trainset2.txt' 
 
 # path to CSV file
-csv_file_path = 'rppgpredictions_16frames_train_final.csv'
+csv_file_path = 'rPPG_predictions/rppgpredictions_16frames_train_final.csv'
 
 csv_headers = ["Batch Index", "frame_path", "rPPG_values"]
 

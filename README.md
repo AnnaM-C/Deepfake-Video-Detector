@@ -73,7 +73,7 @@ STEP 3: `pip install -r requirements.txt`
 
 DeepFakePhys: `pretrained/best_trained_deepfakephysclassifier.pth`
 
-Mult-Model PhysNet (MMP): `pretrained/best_trained_multimodelphysnet.pth`
+Multi-Model PhysNet (MMP): `pretrained/best_trained_multimodelphysnet.pth`
 
 # :wrench: Preprocessing
 
@@ -100,19 +100,25 @@ Please use config files under `./configs/train_configs`
 
 In the `main.py` file change the paths linking to training/validation/testing splits text files on the following lines: 209, 210, 220, 224, 291, 299, 331, 332, 333
 
-## Training on Neural Textures and Testing on Neural Textures With Multi-Model PhysNet 
+# :computer: Experiment Recommendations
 
-STEP 1: Modify `./configs/train_configs/UBFC_FF_PHYSNET_BASIC.yaml`
+We experimented with 4, 8, 16, 32 frames per chunk and various batch sizes with a fixed chunk size (32 frames per chunk). We found chunk size outperformed benchmarks and ran quicker than the largest chunk sizes so we recommend using this size for training and testing. This can be set in the config files next to `CHUNK_LENGTH`
 
-STEP 2: Update `MODEL_PATH` to `"final_model_release/UBFC-rPPG_PhysNet_DiffNormalized.pth`
+* DeepFakePhys best model is trained with 32 frames per chunk
 
-STEP 3: Run `python main.py --config_file ./configs/train_configs/UBFC_FF_PHYSNET_BASIC.yaml` 
+* MultiModelPhys best model is trained with 16 frames per chunk
 
-Note 1: To train a single PhysNet backbone classifier which we call DeepFakePhys, replace the model name `MultiPhysNetModel` with `PhysNet`.
+## Training on Neural Textures and Testing on Neural Textures With Multi-Model PhysNet (MMP) or DeepFakePhys
 
-Note 2: The following configs are used for training 3DResNet-18 and XceptionNet `KINETICS_FF_RESNET3D_BASIC.yaml` and `NOPRETRAIN_FF_XCEPTION_BASIC.yaml`, respectively.
+STEP 1: Modify `./configs/train_configs/UBFC_FF_PHYSNET_BASIC.yaml` (see below for explaination of parameters)
 
-## Testing on Face2Face With Multi-Model PhysNet
+STEP 2: Run `python main.py --config_file ./configs/train_configs/UBFC_FF_PHYSNET_BASIC.yaml` 
+
+Note 1: To train a single PhysNet backbone classifier which we call DeepFakePhys see explaination below of parameters to change in the config
+
+Note 2: To test without training, set hyperparameter settings as described below. MMP's weights are `best_trained_multimodelphysnet.pth` and DeepFakePhys are `best_trained_deepfakephysclassifier.pth` under the `pretrained` folder.
+
+## Cross-Dataset Testing on Face2Face With Multi-Model PhysNet or DeepFakePhys
 
 STEP 1: Modify `./configs/train_configs/UBFC_FF_PHYSNET_BASIC.yaml` 
 
@@ -120,15 +126,17 @@ STEP 2: Run `python main.py --config_file ./configs/train_configs/UBFC_FF_PHYSNE
 
 Note 1: Change `train_and_test` to `only_test`
 
+Note 2: MMP's weights are `best_trained_multimodelphysnet.pth` and DeepFakePhys are `best_trained_deepfakephysclassifier.pth` under the `pretrained` folder.
+
 # :computer: Benchmark Training and Testing
 
-## XceptionNet:
+## XceptionNet
 
 STEP 1: Modify `./configs/train_configs/NOPRETRAIN_FF_XCEPTION_BASIC.yaml` 
 
 STEP 2: Run `python main.py --config_file ./configs/train_configs/NOPRETRAIN_FF_XCEPTION_BASIC.yaml` 
 
-## 3DResNet-18:
+## 3DResNet-18
 
 STEP 1: Modify `./configs/train_configs/KINETICS_FF_RESNET3D_BASIC.yaml` 
 
@@ -141,13 +149,13 @@ You can modify the existing yaml files to meet your own training and testing req
 Here are some explanation of parameters:
 * #### TOOLBOX_MODE: 
   * `train_and_test`: train on the dataset and use the newly trained model to test.
-  * `only_test`: you need to set INFERENCE-MODEL_PATH, and it will use pre-trained model initialized with the MODEL_PATH to test.
+  * `only_test`: you need to set INFERENCE_MODEL_PATH, and it will use pre-trained model initialised with the MODEL_PATH to test.
 * #### TRAIN / VALID / TEST: 
   * `MODEL_FILE_NAME`: The name of the trained model
-  * `DATASET`: The folder name of the dataset for training/validation/testing.
-  * `DATA_TYPE`: How to preprocess the video data
-  * `LABEL_TYPE`: How to preprocess the rPPG label data
-  * `CHUNK_LENGTH`: The length of each chunk (number of frames) which are changed during experimentation with different chunk sizes 
+  * `DATASET`: The folder name of the dataset for training/validation/testing
+  * `DATA_TYPE`: How to preprocess the video data. If training MMP make DiffNormalized+Raw, for PhysNet use Raw
+  * `LABEL_TYPE`: How to preprocess the rPPG label data. If training MMP make DiffNormalized, for PhysNet use Raw
+  * `CHUNK_LENGTH`: The length of each chunk (number of frames) which are changed during experimentation with different chunk sizes
   * `NAME`: Model name to test
   
 * #### MODEL : 
