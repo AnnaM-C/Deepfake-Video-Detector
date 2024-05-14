@@ -1,5 +1,6 @@
+# Refactored from Code Base by https://github.com/ubicomplab/rPPG-Toolbox
 BASE: ['']
-TOOLBOX_MODE: "get_rPPG"  # "train_and_test"  or "only_test"
+TOOLBOX_MODE: "get_rPPG"
 TEST:
   METRICS: ['MAE', 'RMSE', 'MAPE', 'Pearson', 'SNR', 'BA']
   USE_LAST_EPOCH: True

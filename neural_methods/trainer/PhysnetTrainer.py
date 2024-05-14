@@ -1,4 +1,5 @@
-"""PhysNet Trainer refactored from Code Base by https://github.com/ubicomplab/rPPG-Toolbox"""
+# Refactored from Code Base by https://github.com/ubicomplab/rPPG-Toolbox
+"""PhysNet Trainer for deepfake classification"""
 import os
 from collections import OrderedDict
 
@@ -44,10 +45,10 @@ class PhysnetTrainer(BaseTrainer):
             self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
                 self.optimizer, max_lr=config.TRAIN.LR, epochs=config.TRAIN.EPOCHS, steps_per_epoch=self.num_train_batches)
         
-            pretrained_weights = torch.load("/vol/research/DeepFakeDet/rPPG-Toolbox-ais/runs/exp/logs/PhysNet_NeuralTextures_ADAM_LR=0.001_LRReducer_32_frames_new_preprocessed_ds_real_paths_more_frames_overlap_skip_2_noaugmentation_latest_2/PreTrainedModels/PhysNet_NeuralTextures_ADAM_LR=0.001_LRReducer_32_frames_new_preprocessed_ds_real_paths_more_frames_overlap_skip_2_noaugmentation_latest_2_Epoch10.pth")
-            if pretrained_weights:
-                self.model.load_state_dict(pretrained_weights, strict=False)
-                print("Pretrained Loaded")
+            # pretrained_weights = torch.load("/vol/research/DeepFakeDet/rPPG-Toolbox-ais/runs/exp/logs/PhysNet_NeuralTextures_ADAM_LR=0.001_LRReducer_32_frames_new_preprocessed_ds_real_paths_more_frames_overlap_skip_2_noaugmentation_latest_2/PreTrainedModels/PhysNet_NeuralTextures_ADAM_LR=0.001_LRReducer_32_frames_new_preprocessed_ds_real_paths_more_frames_overlap_skip_2_noaugmentation_latest_2_Epoch10.pth")
+            # if pretrained_weights:
+            #     self.model.load_state_dict(pretrained_weights, strict=False)
+            #     print("Pretrained Loaded")
         
         elif config.TOOLBOX_MODE == "only_test":
             pass
@@ -245,7 +246,6 @@ class PhysnetTrainer(BaseTrainer):
         plt.savefig(figure_path)
         plt.close(fig)
         print('')
-        # calculate_metrics(predictions, labels, self.config)
 
         misclassified_samples=get_missclassified_samples(test_preds, test_true, test_filepaths)
         print("Misclassified samples, ", misclassified_samples)

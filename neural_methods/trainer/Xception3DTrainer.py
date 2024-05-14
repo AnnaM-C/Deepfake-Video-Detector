@@ -1,4 +1,5 @@
-"""PhysNet Trainer."""
+# Refactored from Code Base by https://github.com/ubicomplab/rPPG-Toolbox
+"""Xception3D Trainer."""
 import os
 from collections import OrderedDict
 
@@ -91,15 +92,9 @@ class Xception3DTrainer(BaseTrainer):
                 tbar.set_description("Train epoch %s" % epoch)
 
                 output = self.model(batch[0].to(torch.float32).to(self.device))
-                # BVP_label = batch[1].to(
-                #     torch.float32).to(self.device)
+
                 labels = batch[1].to(self.device)
                 labels = labels.long()
-                # print("Outputs, ", output)
-
-                # rPPG = (rPPG - torch.mean(rPPG)) / torch.std(rPPG)  # normalize
-                # BVP_label = (BVP_label - torch.mean(BVP_label)) / \
-                #             torch.std(BVP_label)  # normalize
                 loss = self.loss_model(output, labels)
                 loss.backward()
                 running_loss += loss.item()
@@ -108,10 +103,6 @@ class Xception3DTrainer(BaseTrainer):
                         f'[{epoch}, {idx + 1:5d}] loss: {running_loss / 100:.3f}')
                     running_loss = 0.0
                 train_loss.append(loss.item())
-
-                # Append the current learning rate to the list
-                #TODO: amend this for StepLR
-                # lrs.append(self.scheduler.get_last_lr())
                 lrs.append(self.optimizer.param_groups[0]['lr'])
 
                 proba = torch.softmax(output, dim=1)
@@ -123,8 +114,6 @@ class Xception3DTrainer(BaseTrainer):
 
 
                 self.optimizer.step()
-                #TODO: uncomment for StepLR
-                # self.scheduler.step()
                 self.optimizer.zero_grad()
                 tbar.set_postfix(loss=loss.item())
 
@@ -146,8 +135,6 @@ class Xception3DTrainer(BaseTrainer):
             twriter.add_scalar('AUC/train', train_roc_auc, epoch+1)
             print(f"Epoch: {epoch} Training Accuracy: {epoch_accuracy} ")
 
-            #TODO: uncomment for StepLR
-            # self.save_model(epoch)
             if not self.config.TEST.USE_LAST_EPOCH:
                 # valid loss is an average of all the losses that were accumulated at epoch training 
                 valid_loss, valid_accuracy, val_true, val_scores = self.valid(data_loader)
@@ -165,19 +152,15 @@ class Xception3DTrainer(BaseTrainer):
                 elif (valid_loss < self.min_valid_loss):
                     self.min_valid_loss = valid_loss
                     self.best_epoch = epoch
-                    #NOTE: recently added for early stopping
                     self.wait = 0
-                    #TODO: remove for LRStep
                     self.save_model(epoch)
                     print("Update best model! Best epoch: {}".format(self.best_epoch))
-                #NOTE: recently added for early stopping
                 else:
                     self.wait += 1
                     if self.wait >= self.patience:
                         print("Training stopped early, triggered by early stopping logic.")
                         self.early_stop = True
                         break
-                #TODO: remove for LRStep
                 self.scheduler.step(valid_loss)
 
             vwriter.add_scalar('Loss/val', valid_loss, epoch+1)
@@ -301,15 +284,6 @@ class Xception3DTrainer(BaseTrainer):
         test_acc = np.mean(test_acc)
         fpr, tpr, thresholds = metrics.roc_curve(test_true, test_scores)
         test_roc_auc = metrics.auc(fpr, tpr)
-
-                # for idx in range(batch_size):
-                #     subj_index = test_batch[2][idx]
-                #     sort_index = int(test_batch[3][idx])
-                #     if subj_index not in predictions.keys():
-                #         predictions[subj_index] = dict()
-                #         labels[subj_index] = dict()
-                #     predictions[subj_index][sort_index] = pred_ppg_test[idx]
-                #     labels[subj_index][sort_index] = label[idx]
             
         # confusion matrix
         cm = confusion_matrix(test_true, test_preds)
@@ -327,12 +301,9 @@ class Xception3DTrainer(BaseTrainer):
         plt.savefig(figure_path)
         plt.close(fig)  # Close the figure to free memory
         print('')
-        # calculate_metrics(predictions, labels, self.config)
 
         # save for binary classification
         if self.config.TEST.OUTPUT_SAVE_DIR: # saving test outputs 
-            # self.save_test_outputs(predictions, labels, self.config)
-            # save
             print("Test accuracy, ", test_acc)
             print("Test roc, ", test_roc_auc)
             self.save_test_metrics(test_acc, test_roc_auc, self.config)

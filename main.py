@@ -1,4 +1,5 @@
 """ Codebase refactored from Code Base by https://github.com/ubicomplab/rPPG-Toolbox."""
+""" You will need to change the paths linking to training/validation/testing splits text files on the following lines: 209, 210, 220, 224, 291, 299, 331, 332, 333 """
 
 import argparse
 import random
@@ -111,8 +112,6 @@ def train_and_test(config, data_loader_dict):
     else:
         raise ValueError('Your Model is Not Supported  Yet!')
     model_trainer.train(data_loader_dict, writer)
-    # test on same DS
-    # model_trainer.test(data_loader_dict, twriter, vwriter)
     model_trainer.test(data_loader_dict)
 
 
@@ -159,13 +158,13 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
 
-    # configurations.
+    # configurations
     config = get_config(args)
     print('Configuration:')
     print(config, end='\n\n')
     data_loader_dict = dict() # dictionary of data loaders 
     
-    #transforms
+    # transforms
     if config.MODEL.NAME == "Physnet" or config.MODEL.NAME == "MultiPhysNetModel":
         print("Entered for transforming..")
         transform = transforms.Compose([
@@ -203,10 +202,10 @@ if __name__ == "__main__":
             rPPG_valid_path=None
             rPPG_test_path=None
 
+    # if config file is set to 'train_and_test' enter here to train and test the model called MODEL.name in config file
     if config.TOOLBOX_MODE == "train_and_test":
         print("Entered train and test")
 
-        # get 'real' video frame filepaths
         train_real_files = get_files_from_splits(f'/vol/research/DeepFakeDet/notebooks/FaceForensics++/original_sequences/youtube/c23/train.txt')
         valid_real_files = get_files_from_splits(f'/vol/research/DeepFakeDet/notebooks/FaceForensics++/original_sequences/youtube/c23/val.txt')
 
@@ -286,16 +285,16 @@ if __name__ == "__main__":
         else:
             data_loader_dict['valid'] = None
 
+    # if config file is set to 'train_and_test' or 'only_test' enter here the model will be tested on the model path set in the config file as MODEL_PATH
     if config.TOOLBOX_MODE == "train_and_test" or config.TOOLBOX_MODE == "only_test":
 
         test_real_files = get_files_from_splits(f'/vol/research/DeepFakeDet/notebooks/FaceForensics++/original_sequences/youtube/c23/test.txt')
 
-
-        # NOTE: for multiple ds
+        # configured for multiple datasets
         test_dataset_names = config.TEST.DATA.DATASET.replace(" ", "").split(",")
 
         test_fake_dataset_file_paths = {}
-        # NOTE: for multiple ds
+        # configured for multiple datasets
         for test_dataset in test_dataset_names:
             test_fake_files = get_files_from_splits(f'/vol/research/DeepFakeDet/notebooks/FaceForensics++/manipulated_sequences/{test_dataset}/c23/test.txt')
             test_fake_dataset_file_paths[test_dataset] = test_fake_files
@@ -326,6 +325,7 @@ if __name__ == "__main__":
             test_data_loader.save_clip_plots(idx=1, save_dir='Exp1/chunks/test', frames_to_show=5)
         data_loader_dict['test'] = DataLoader(test_data_loader, batch_size=config.TRAIN.BATCH_SIZE, shuffle=False, num_workers=8)
 
+    # if config file is set to 'get_rPPG' PhysNet will be inferenced to obtain rPPG values of real videossaved to text files in rPPG_predictions
     if config.TOOLBOX_MODE == "get_rPPG":
 
         train_real_files = get_files_from_splits(f'/vol/research/DeepFakeDet/notebooks/FaceForensics++/original_sequences/youtube/c23/train.txt')

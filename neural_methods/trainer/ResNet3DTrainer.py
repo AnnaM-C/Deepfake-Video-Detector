@@ -1,4 +1,5 @@
-"""ResNet Trainer."""
+# Adapted from Code Base by https://github.com/ubicomplab/rPPG-Toolbox
+"""3DResNet-18 Trainer."""
 import os
 from collections import OrderedDict
 
@@ -171,7 +172,6 @@ class ResNet3DTrainer(BaseTrainer):
         print('')
         print("===Testing===")
         predictions = dict()
-        # labels = dict()
 
         if self.config.TOOLBOX_MODE == "only_test":
             if not os.path.exists(self.config.INFERENCE.MODEL_PATH):
@@ -243,11 +243,9 @@ class ResNet3DTrainer(BaseTrainer):
         plt.savefig(figure_path)
         plt.close(fig)  # Close the figure to free memory
         print('')
-        # calculate_metrics(predictions, labels, self.config)
 
         # save for binary classification
         if self.config.TEST.OUTPUT_SAVE_DIR: # saving test outputs 
-            # self.save_test_outputs(predictions, labels, self.config)
             # save
             print("Test accuracy, ", test_acc)
             print("Test roc, ", test_roc_auc)

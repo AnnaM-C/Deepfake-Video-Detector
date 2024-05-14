@@ -27,7 +27,6 @@ class MultiPhysNetModel(nn.Module):
         )
 
     def forward(self, video_chunk1, video_chunk2):
-        # print("Video chunk, ", video_chunk1.shape)
         video_chunk1 = video_chunk1.permute(0, 2, 1, 3, 4)
         video_chunk2 = video_chunk2.permute(0, 2, 1, 3, 4)
 
@@ -39,11 +38,9 @@ class MultiPhysNetModel(nn.Module):
         # [6,2,16,1,1]
         concatenated_outputs = concatenated_outputs.squeeze()
         # [6,2,16]
-        # print("Concat shape, ", concatenated_outputs.shape)
         # [6,32]
         concatenated_outputs=concatenated_outputs.reshape(-1, self.concatenated_output_size)
 
-        # print("Concat shape, ", concatenated_outputs.shape)
         # passing through the MLP heads
         mlp1_output = self.mlp_head1(concatenated_outputs)
         mlp2_output = self.mlp_head2(concatenated_outputs)

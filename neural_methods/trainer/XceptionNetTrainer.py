@@ -1,3 +1,5 @@
+# Refactored from Code Base by https://github.com/ubicomplab/rPPG-Toolbox
+
 """XceptionNet Trainer."""
 import os
 from collections import OrderedDict
@@ -57,7 +59,6 @@ class XceptionNetTrainer(BaseTrainer):
                 
             momentum = 0.9
             weight_decay = 0.0005 #0.00001
-            # self.optimizer = SGD(self.model.parameters(), lr=0.0001, momentum=momentum, weight_decay=weight_decay)
             self.optimizer = optim.Adam(
                 self.model.parameters(), 
                 lr=config.TRAIN.LR, 
@@ -75,7 +76,6 @@ class XceptionNetTrainer(BaseTrainer):
             # self.model.load_state_dict(state_dict, False)
             # print('Load pretrained model successfully!')
             
-            # self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min', factor=0.5, patience=2, min_lr=0.0000000009, verbose=True)
         elif config.TOOLBOX_MODE == "only_test":
             pass
         else:
@@ -91,13 +91,6 @@ class XceptionNetTrainer(BaseTrainer):
         mean_valid_losses = []
         lrs = []
         for epoch in range(self.max_epoch_num):
-            # if epoch < 5:
-            #     for param in self.model.parameters():
-            #         param.requires_grad = False
-            # else:
-            #     # unfreeze after 5 epochs
-            #     for param in self.model.parameters():
-            #         param.requires_grad = True
             print('')
             print(f"====Training Epoch: {epoch}====")
             running_loss = 0.0
@@ -111,22 +104,9 @@ class XceptionNetTrainer(BaseTrainer):
             for idx, batch in enumerate(tbar):
                 tbar.set_description("Train epoch %s" % epoch)
                 output = self.model(batch[0].to(torch.float32).to(self.device))
-                # BVP_label = batch[1].to(
-                #     torch.float32).to(self.device)
                 labels = batch[1].to(self.device)
                 labels = labels.long()
-                # print("Outputs, ", output)
-
-                # rPPG = (rPPG - torch.mean(rPPG)) / torch.std(rPPG)  # normalize
-                # BVP_label = (BVP_label - torch.mean(BVP_label)) / \
-                #             torch.std(BVP_label)  # normalize
                 loss = self.loss_model(output, labels)
-                
-                # if epoch >= 5:
-                #     loss.backward()
-                #     self.optimizer.step()
-                #     self.optimizer.zero_grad()
-                #NOTE: comment back in if not freezing with epochs
                 loss.backward()
                 running_loss += loss.item()
                 if idx % 100 == 99:  # print every 100 mini-batches
@@ -134,10 +114,6 @@ class XceptionNetTrainer(BaseTrainer):
                         f'[{epoch}, {idx + 1:5d}] loss: {running_loss / 100:.3f}')
                     running_loss = 0.0
                 train_loss.append(loss.item())
-
-                # Append the current learning rate to the list
-                #TODO: amend this for StepLR
-                # lrs.append(self.scheduler.get_last_lr())
                 lrs.append(self.optimizer.param_groups[0]['lr'])
 
                 proba = torch.softmax(output, dim=1)
@@ -147,11 +123,7 @@ class XceptionNetTrainer(BaseTrainer):
                 print("Running Acc, ", running_accuracy)
                 print("Length dataloader, ", len(data_loader["train"]))
 
-                #NOTE: comment back in if not freezing with epochs
                 self.optimizer.step()
-                #TODO: uncomment for StepLR
-                # self.scheduler.step()
-                #NOTE: comment back in if not freezing with epochs
                 self.optimizer.zero_grad()
                 tbar.set_postfix(loss=loss.item())
 
@@ -161,7 +133,6 @@ class XceptionNetTrainer(BaseTrainer):
 
             # Append the mean training loss for the epoch
             mean_training_losses.append(np.mean(train_loss))
-            # epoch_loss = running_loss / len(data_loader["train"])
             mean_epoch_loss=np.mean(train_loss)
             epoch_accuracy = running_accuracy / len(data_loader["train"])
 
@@ -172,8 +143,6 @@ class XceptionNetTrainer(BaseTrainer):
             writer.add_scalar("Accuracy/train", epoch_accuracy, epoch)
             print(f"Epoch: {epoch} Training Accuracy: {epoch_accuracy} ")
 
-            #TODO: uncomment for StepLR
-            # self.save_model(epoch)
             if not self.config.TEST.USE_LAST_EPOCH:
                 # valid loss is an average of all the losses that were accumulated at epoch training 
                 valid_loss, valid_accuracy, val_true, val_scores = self.valid(data_loader)
@@ -193,20 +162,15 @@ class XceptionNetTrainer(BaseTrainer):
                 elif (valid_loss < self.min_valid_loss):
                     self.min_valid_loss = valid_loss
                     self.best_epoch = epoch
-                    #NOTE: recently added for early stopping
                     self.wait = 0
-                    #TODO: remove for LRStep
                     self.save_model(epoch)
                     print("Update best model! Best epoch: {}".format(self.best_epoch))
-                #NOTE: recently added for early stopping
                 else:
                     self.wait += 1
                     if self.wait >= self.patience:
                         print("Training stopped early, triggered by early stopping logic.")
                         self.early_stop = True
                         break
-                #TODO: remove for LRStep
-                # self.scheduler.step(valid_loss)
             print(f"Epoch: {epoch} Valid accuracy: {valid_accuracy}")
 
         if not self.config.TEST.USE_LAST_EPOCH: 
@@ -326,15 +290,6 @@ class XceptionNetTrainer(BaseTrainer):
         fpr, tpr, thresholds = metrics.roc_curve(test_true, test_scores)
         test_roc_auc = metrics.auc(fpr, tpr)
 
-                # for idx in range(batch_size):
-                #     subj_index = test_batch[2][idx]
-                #     sort_index = int(test_batch[3][idx])
-                #     if subj_index not in predictions.keys():
-                #         predictions[subj_index] = dict()
-                #         labels[subj_index] = dict()
-                #     predictions[subj_index][sort_index] = pred_ppg_test[idx]
-                #     labels[subj_index][sort_index] = label[idx]
-            
         # confusion matrix
         cm = confusion_matrix(test_true, test_preds)
         classes = ['real', 'fake']
@@ -351,11 +306,9 @@ class XceptionNetTrainer(BaseTrainer):
         plt.savefig(figure_path)
         plt.close(fig)  # Close the figure to free memory
         print('')
-        # calculate_metrics(predictions, labels, self.config)
 
         # save for binary classification
         if self.config.TEST.OUTPUT_SAVE_DIR: # saving test outputs 
-            # self.save_test_outputs(predictions, labels, self.config)
             # save
             print("Test accuracy, ", test_acc)
             print("Test roc, ", test_roc_auc)

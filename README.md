@@ -2,7 +2,7 @@
 
 # :wave: Introduction
 
-**Deep Fake Detection** this research project explores PhysNet as a backbone and rPPG biomarkers also known as remote photoplethysmography(rPPG) for deepfake detection. 
+**Deep Fake Detection** This research project explores PhysNet as a backbone and rPPG biomarkers also known as remote photoplethysmography(rPPG) for deepfake detection. 
 
 ![Overview of Multi-Model PhysNet](./figures/MultiModel.png)
 
@@ -69,9 +69,13 @@ STEP 2: `conda activate DeepFakeDet`
 
 STEP 3: `pip install -r requirements.txt` 
 
+# :play: Best Model Pretrained Weights
+
+Please download from x
+
 # :wrench: Preprocessing
 
-STEP 1: Go to https://github.com/SCLBD/DeepfakeBench/blob/main/README.md#3-preprocessing-optional 
+STEP 1: go to https://github.com/SCLBD/DeepfakeBench/blob/main/README.md#3-preprocessing-optional 
 
 STEP 2: run `python preprocess.py`
 
@@ -92,11 +96,15 @@ STEP 1: Run `python main.py --config_file ./configs/infer_configs/PURE_UBFC-rPPG
 
 Please use config files under `./configs/train_configs`
 
+In the `main.py` file change the paths linking to training/validation/testing splits text files on the following lines: 209, 210, 220, 224, 291, 299, 331, 332, 333
+
 ## Training on Neural Textures and Testing on Neural Textures With Multi-Model PhysNet 
 
-STEP 1: Modify `./configs/train_configs/UBFC_FF_PHYSNET_BASIC.yaml` 
+STEP 1: Modify `./configs/train_configs/UBFC_FF_PHYSNET_BASIC.yaml`
 
-STEP 2: Run `python main.py --config_file ./configs/train_configs/UBFC_FF_PHYSNET_BASIC.yaml` 
+STEP 2: Update `MODEL_PATH:` to `"final_model_release/UBFC-rPPG_PhysNet_DiffNormalized.pth`
+
+STEP 3: Run `python main.py --config_file ./configs/train_configs/UBFC_FF_PHYSNET_BASIC.yaml` 
 
 Note 1: To train a single PhysNet backbone classifier which we call DeepFakePhys, replace the model name `MultiPhysNetModel` with `PhysNet`.
 
@@ -124,15 +132,6 @@ STEP 1: Modify `./configs/train_configs/KINETICS_FF_RESNET3D_BASIC.yaml`
 
 STEP 2: Run `python main.py --config_file ./configs/train_configs/KINETICS_FF_RESNET3D_BASIC.yaml` 
 
-
-## Testing on Face2Face With Multi-Model PhysNet
-
-STEP 1: Modify `./configs/train_configs/UBFC_FF_PHYSNET_BASIC.yaml` 
-
-STEP 2: Run `python main.py --config_file ./configs/train_configs/UBFC_FF_PHYSNET_BASIC.yaml`
-
-Note 1: Change `train_and_test` to `only_test`
-
 # :scroll: YAML File Setting
 Yaml files control all parameters for training and evaluation. 
 You can modify the existing yaml files to meet your own training and testing requirements.
@@ -146,7 +145,7 @@ Here are some explanation of parameters:
   * `DATASET`: The folder name of the dataset for training/validation/testing.
   * `DATA_TYPE`: How to preprocess the video data
   * `LABEL_TYPE`: How to preprocess the rPPG label data
-  * `CHUNK_LENGTH`: The length of each chunk (number of frames)
+  * `CHUNK_LENGTH`: The length of each chunk (number of frames) which are changed during experimentation with different chunk sizes 
   * `NAME`: Model name to test
   
 * #### MODEL : Set used model (XceptionNet, DeepFakePhys, 3D-ResNet18, Multi-Model PhysNet are supported).

@@ -1,4 +1,5 @@
-"""PhysNet Trainer."""
+# Refactored from Code Base by https://github.com/ubicomplab/rPPG-Toolbox
+"""PhysNet Trainer for rPPG prediction."""
 import os
 from collections import OrderedDict
 
