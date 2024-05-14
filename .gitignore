@@ -23,6 +23,7 @@ pretrained/*
 final_model_release/*
 Exp1/CardioVtLogs/*
 Exp1/cmatrix/*
+Exp1/cmatrix/test/*
 Exp1/chunks/*
 Exp1/images/*
 Exp1/logs/*
