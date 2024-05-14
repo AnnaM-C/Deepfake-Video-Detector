@@ -32,6 +32,8 @@ tools/preprocessing_viz
 final_model_release/PURE_PhysNet_DiffNormalized.pth
 
 !results_0/graphs/
+!Exp1/cmatrix/.gitkeep
+!Exp1/cmatrix/test/.gitkeep
 !Exp1/cmatrix/test/Final
 !dlib_tools/.gitkeep
 !tools/.gitkeep
