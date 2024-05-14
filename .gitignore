@@ -21,7 +21,6 @@ debug_utils_physnet.py
 test.yaml
 pretrained/*
 final_model_release/*
-Exp1/*
 tools/*
 ._*
 Utils/._
