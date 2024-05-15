@@ -253,7 +253,6 @@
 
 import math
 from functools import partial
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -353,12 +352,10 @@ class Bottleneck(nn.Module):
 
 
 class ResNet(nn.Module):
-
     def __init__(self,
                  block,
                  layers,
                  block_inplanes,
-                 n_input_channels,
                  conv1_t_size=7,
                  conv1_t_stride=1,
                  no_max_pool=False,

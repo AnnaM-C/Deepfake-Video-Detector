@@ -33,7 +33,9 @@ class PhysnetTrainer(BaseTrainer):
         self.config = config
         self.min_valid_loss = None
         self.best_epoch = 0
-
+        self.patience = 10
+        self.wait = 0
+        self.early_stop = False
         self.model = PhysNet_padding_Encoder_Decoder_MAX(
             frames=config.MODEL.PHYSNET.FRAME_NUM).to(self.device)  # [3, T, 128,128]
         if config.TOOLBOX_MODE == "train_and_test":
@@ -54,10 +56,10 @@ class PhysnetTrainer(BaseTrainer):
             pass
         else:
             raise ValueError("PhysNet trainer initialized in incorrect toolbox mode!")
+    
 
     def train(self, data_loader, writer):
         print("Data loader train length in PhysNetTrainer inside train function, ", len(data_loader['train']))
-
         """Training routine for model"""
         if data_loader["train"] is None:
             raise ValueError("No data for train")
@@ -69,7 +71,11 @@ class PhysnetTrainer(BaseTrainer):
             print(f"====Training Epoch: {epoch}====")
             running_accuracy=0.0
             running_loss = 0.0
+            running_accuracy = 0.0
             train_loss = []
+            train_true=[]
+            train_scores=[]
+
             self.model.train()
             tbar = tqdm(data_loader["train"], ncols=80)
             for idx, batch in enumerate(tbar):
@@ -92,12 +98,28 @@ class PhysnetTrainer(BaseTrainer):
                 train_loss.append(loss.item())
 
                 # Append the current learning rate to the list
-                lrs.append(self.scheduler.get_last_lr())
+                #TODO: amend this for StepLR
+                # lrs.append(self.scheduler.get_last_lr())
+                lrs.append(self.optimizer.param_groups[0]['lr'])
+
+                proba = torch.softmax(output, dim=1)
+                pred_labels = np.argmax(proba.cpu().detach().numpy(), axis=1)
+                running_accuracy += calculate_accuracy(pred_labels, labels)
+
+                print("Running Acc, ", running_accuracy)
+                print("Length dataloader, ", len(data_loader["train"]))
+
 
                 self.optimizer.step()
-                self.scheduler.step()
+                #TODO: uncomment for StepLR
+                # self.scheduler.step()
                 self.optimizer.zero_grad()
                 tbar.set_postfix(loss=loss.item())
+
+
+                score = proba[:, 1].cpu().detach().numpy() 
+                train_true.extend(labels.cpu().numpy())
+                train_scores.extend(score)
 
             # Append the mean training loss for the epoch
             mean_training_losses.append(np.mean(train_loss))
@@ -112,7 +134,7 @@ class PhysnetTrainer(BaseTrainer):
                 writer.add_scalar("Loss/validation", valid_loss, epoch)
                 writer.add_scalar("Accuracy/validation", valid_accuracy, epoch)
                 mean_valid_losses.append(valid_loss)
-                print('validation loss: ', valid_loss)
+                # this is logic to update the minimum valid loss if the valid loss for that epoch is less than the min valid loss
                 if self.min_valid_loss is None:
                     self.min_valid_loss = valid_loss
                     self.best_epoch = epoch
@@ -120,13 +142,33 @@ class PhysnetTrainer(BaseTrainer):
                 elif (valid_loss < self.min_valid_loss):
                     self.min_valid_loss = valid_loss
                     self.best_epoch = epoch
+                    #NOTE: recently added for early stopping
+                    self.wait = 0
+                    #TODO: remove for LRStep
+                    self.save_model(epoch)
                     print("Update best model! Best epoch: {}".format(self.best_epoch))
+                #NOTE: recently added for early stopping
+                else:
+                    self.wait += 1
+                    if self.wait >= self.patience:
+                        print("Training stopped early, triggered by early stopping logic.")
+                        self.early_stop = True
+                        break
+                #TODO: remove for LRStep
+                self.scheduler.step(valid_loss)
+
+            vwriter.add_scalar('Loss/val', valid_loss, epoch+1)
+            vwriter.add_scalar('Acc/val', valid_accuracy, epoch+1)
+            vwriter.add_scalar('AUC/val', val_roc_auc, epoch+1)
+            print(f"Epoch: {epoch} Valid accuracy: {valid_accuracy}")
+
         if not self.config.TEST.USE_LAST_EPOCH: 
             print("best trained epoch: {}, min_val_loss: {}".format(
                 self.best_epoch, self.min_valid_loss))
         if self.config.TRAIN.PLOT_LOSSES_AND_LR:
             self.plot_losses_and_lrs(mean_training_losses, mean_valid_losses, lrs, self.config)
         writer.close()
+
 
     def valid(self, data_loader):
         """ Runs the model on valid sets."""
@@ -139,6 +181,7 @@ class PhysnetTrainer(BaseTrainer):
         valid_accuracy = []
         self.model.eval()
         valid_step = 0
+        running_val_loss = 0.0
         with torch.no_grad():
             vbar = tqdm(data_loader["valid"], ncols=80)
             for valid_idx, valid_batch in enumerate(vbar):
@@ -157,8 +200,16 @@ class PhysnetTrainer(BaseTrainer):
                 valid_accuracy.append(acc)
 
                 valid_loss.append(loss_ecg.item())
+                valid_acc.append(acc)
+                running_val_loss += loss_ecg.item()
                 valid_step += 1
                 vbar.set_postfix(loss=loss_ecg.item())
+                scores = proba[:, 1].cpu().detach().numpy()  # probability of positive class
+                val_true.extend(labels.cpu().numpy())
+                val_scores.extend(scores)
+
+            print("Losses list for all valid batches, ", valid_loss)
+            print("running_val_loss/len(dataloader['valid']), ", running_val_loss/len(data_loader['valid']))
             valid_loss = np.asarray(valid_loss)
             valid_accuracy = np.asarray(valid_accuracy)
         return np.mean(valid_loss), np.mean(valid_accuracy)

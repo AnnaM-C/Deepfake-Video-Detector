@@ -408,7 +408,6 @@ class VideoFramesDataset(Dataset):
         for frame_idx in range(frames_to_show):
             if frame_idx >= len(sample):
                 break 
-
             image_np = sample[frame_idx]
 
             image_np = np.transpose(image_np, (1, 2, 0)) #rearrange from (C, H, W) to (H, W, C)

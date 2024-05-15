@@ -140,7 +140,6 @@ def test(config, data_loader_dict):
 
     model_trainer.test(data_loader_dict)
 
-
 def get_files_from_splits(splits_file):
     video_files = []
     with open(splits_file, 'r') as f:
@@ -284,6 +283,7 @@ if __name__ == "__main__":
             data_loader_dict["valid"] = DataLoader(valid_dataset, batch_size=config.TRAIN.BATCH_SIZE, shuffle=False, num_workers=8)
         else:
             data_loader_dict['valid'] = None
+            
 
     # if config file is set to 'train_and_test' or 'only_test' enter here the model will be tested on the model path set in the config file as MODEL_PATH
     if config.TOOLBOX_MODE == "train_and_test" or config.TOOLBOX_MODE == "only_test":
@@ -352,6 +352,7 @@ if __name__ == "__main__":
         train_data_loader.save_clip_plots(idx=1, save_dir='Exp1/chunks/train/rPPG', frames_to_show=5)
         data_loader_dict['train'] = DataLoader(train_data_loader, batch_size=config.INFERENCE.BATCH_SIZE, shuffle=True, num_workers=8)
         print("Train dataloader length, ", len(train_data_loader))
+
 
         valid_loader = dataset.data_loader.VideoFramesDataset.VideoFramesDataset
         valid_dataset = valid_loader(

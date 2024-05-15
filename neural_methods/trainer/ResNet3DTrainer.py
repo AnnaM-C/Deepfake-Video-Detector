@@ -226,7 +226,7 @@ class ResNet3DTrainer(BaseTrainer):
         test_acc = np.mean(test_acc)
         fpr, tpr, thresholds = metrics.roc_curve(test_true, test_scores)
         test_roc_auc = metrics.auc(fpr, tpr)
-            
+
         # confusion matrix
         cm = confusion_matrix(test_true, test_preds)
         classes = ['real', 'fake']
