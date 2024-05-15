@@ -1,4 +1,5 @@
-"""PhysNet Trainer."""
+# Refactored from Code Base by https://github.com/ubicomplab/rPPG-Toolbox
+"""PhysNet Trainer for deepfake classification"""
 import os
 from collections import OrderedDict
 
@@ -11,9 +12,8 @@ from neural_methods.model.PhysNet import PhysNet_padding_Encoder_Decoder_MAX
 from neural_methods.trainer.BaseTrainer import BaseTrainer
 from torch.autograd import Variable
 from tqdm import tqdm
-import torch.nn as nn
-from Utils.utils import calculate_accuracy
-from torch.optim import SGD
+from Utils.utils import calculate_accuracy, get_missclassified_samples, save_misclassified_samples, save_predictions
+from torch.utils.tensorboard import SummaryWriter
 from sklearn import metrics
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
@@ -38,41 +38,38 @@ class PhysnetTrainer(BaseTrainer):
         self.early_stop = False
         self.model = PhysNet_padding_Encoder_Decoder_MAX(
             frames=config.MODEL.PHYSNET.FRAME_NUM).to(self.device)  # [3, T, 128,128]
-
         if config.TOOLBOX_MODE == "train_and_test":
             self.num_train_batches = len(data_loader["train"])
-            self.loss_model = nn.CrossEntropyLoss()
-            momentum = 0.9
-            weight_decay = 0.00001
-            self.optimizer = SGD(self.model.parameters(), lr=0.001, momentum=momentum, weight_decay=weight_decay)
-            # self.optimizer = optim.Adam(
-            #     self.model.parameters(), lr=0.00001)
+            self.loss_model = torch.nn.CrossEntropyLoss()
+            self.optimizer = optim.Adam(
+                self.model.parameters(), lr=config.TRAIN.LR)
             # See more details on the OneCycleLR scheduler here: https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.OneCycleLR.html
-            # self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=config.TRAIN.LR, epochs=config.TRAIN.EPOCHS, steps_per_epoch=self.num_train_batches)
-            
-            # pretrained_weights = torch.load("pretrained/PhysNet/NeuralTextures_Deepfake/Deepfakes_NeuralTextures_PhysNet_Epoch2.pth")
+            self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
+                self.optimizer, max_lr=config.TRAIN.LR, epochs=config.TRAIN.EPOCHS, steps_per_epoch=self.num_train_batches)
+        
+            # pretrained_weights = torch.load("/vol/research/DeepFakeDet/rPPG-Toolbox-ais/runs/exp/logs/PhysNet_NeuralTextures_ADAM_LR=0.001_LRReducer_32_frames_new_preprocessed_ds_real_paths_more_frames_overlap_skip_2_noaugmentation_latest_2/PreTrainedModels/PhysNet_NeuralTextures_ADAM_LR=0.001_LRReducer_32_frames_new_preprocessed_ds_real_paths_more_frames_overlap_skip_2_noaugmentation_latest_2_Epoch10.pth")
             # if pretrained_weights:
             #     self.model.load_state_dict(pretrained_weights, strict=False)
             #     print("Pretrained Loaded")
-            
-            self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min', factor=0.5, patience=2, min_lr=0.0000000009, verbose=True)
+        
         elif config.TOOLBOX_MODE == "only_test":
             pass
         else:
             raise ValueError("PhysNet trainer initialized in incorrect toolbox mode!")
     
 
-    def train(self, data_loader, twriter, vwriter):
+    def train(self, data_loader, writer):
+        print("Data loader train length in PhysNetTrainer inside train function, ", len(data_loader['train']))
         """Training routine for model"""
         if data_loader["train"] is None:
             raise ValueError("No data for train")
-
         mean_training_losses = []
         mean_valid_losses = []
         lrs = []
         for epoch in range(self.max_epoch_num):
             print('')
             print(f"====Training Epoch: {epoch}====")
+            running_accuracy=0.0
             running_loss = 0.0
             running_accuracy = 0.0
             train_loss = []
@@ -83,21 +80,18 @@ class PhysnetTrainer(BaseTrainer):
             tbar = tqdm(data_loader["train"], ncols=80)
             for idx, batch in enumerate(tbar):
                 tbar.set_description("Train epoch %s" % epoch)
-
                 output = self.model(batch[0].to(torch.float32).to(self.device))
-                # BVP_label = batch[1].to(
-                #     torch.float32).to(self.device)
                 labels = batch[1].to(self.device)
                 labels = labels.long()
-                # print("Outputs, ", output)
-
-                # rPPG = (rPPG - torch.mean(rPPG)) / torch.std(rPPG)  # normalize
-                # BVP_label = (BVP_label - torch.mean(BVP_label)) / \
-                #             torch.std(BVP_label)  # normalize
                 loss = self.loss_model(output, labels)
                 loss.backward()
                 running_loss += loss.item()
-                if idx % 100 == 99:  # print every 100 mini-batches
+
+                proba = torch.softmax(output, dim=1)
+                pred_labels = np.argmax(proba.cpu().detach().numpy(), axis=1)
+
+                running_accuracy += calculate_accuracy(pred_labels, labels)
+                if idx % 100 == 99:
                     print(
                         f'[{epoch}, {idx + 1:5d}] loss: {running_loss / 100:.3f}')
                     running_loss = 0.0
@@ -129,28 +123,16 @@ class PhysnetTrainer(BaseTrainer):
 
             # Append the mean training loss for the epoch
             mean_training_losses.append(np.mean(train_loss))
-
-            epoch_loss = running_loss / len(data_loader["train"])
             epoch_accuracy = running_accuracy / len(data_loader["train"])
+            mean_epoch_loss=np.mean(train_loss)
+            writer.add_scalar("Loss/train", mean_epoch_loss, epoch)
+            writer.add_scalar("Accuracy/train", epoch_accuracy, epoch)
 
-            fpr, tpr, thresholds = metrics.roc_curve(train_true, train_scores)
-            train_roc_auc = metrics.auc(fpr, tpr)
-
-            twriter.add_scalar('Loss/train', epoch_loss, epoch+1)
-            twriter.add_scalar('Acc/train', epoch_accuracy, epoch+1)
-            twriter.add_scalar('AUC/train', train_roc_auc, epoch+1)
-            print(f"Epoch: {epoch} Training Accuracy: {epoch_accuracy} ")
-
-            #TODO: uncomment for StepLR
-            # self.save_model(epoch)
-            if not self.config.TEST.USE_LAST_EPOCH:
-                # valid loss is an average of all the losses that were accumulated at epoch training 
-                valid_loss, valid_accuracy, val_true, val_scores = self.valid(data_loader)
-                print('Mean batch validation loss: ', valid_loss)
-                # roc
-                fpr, tpr, thresholds = metrics.roc_curve(val_true, val_scores)
-                val_roc_auc = metrics.auc(fpr, tpr)
-                # this is a list of mean valid losses representing for each epoch the average loss
+            self.save_model(epoch)
+            if not self.config.TEST.USE_LAST_EPOCH: 
+                valid_loss, valid_accuracy = self.valid(data_loader)
+                writer.add_scalar("Loss/validation", valid_loss, epoch)
+                writer.add_scalar("Accuracy/validation", valid_accuracy, epoch)
                 mean_valid_losses.append(valid_loss)
                 # this is logic to update the minimum valid loss if the valid loss for that epoch is less than the min valid loss
                 if self.min_valid_loss is None:
@@ -185,6 +167,7 @@ class PhysnetTrainer(BaseTrainer):
                 self.best_epoch, self.min_valid_loss))
         if self.config.TRAIN.PLOT_LOSSES_AND_LR:
             self.plot_losses_and_lrs(mean_training_losses, mean_valid_losses, lrs, self.config)
+        writer.close()
 
 
     def valid(self, data_loader):
@@ -195,9 +178,7 @@ class PhysnetTrainer(BaseTrainer):
         print('')
         print(" ====Validing===")
         valid_loss = []
-        valid_acc= []
-        val_scores = []
-        val_true = []
+        valid_accuracy = []
         self.model.eval()
         valid_step = 0
         running_val_loss = 0.0
@@ -206,16 +187,17 @@ class PhysnetTrainer(BaseTrainer):
             for valid_idx, valid_batch in enumerate(vbar):
                 vbar.set_description("Validation")
 
-                outputs = self.model(valid_batch[0].to(torch.float32).to(self.device))
-                labels = valid_batch[1].to(self.device)
-                labels = labels.long()
+                output = self.model(
+                    valid_batch[0].to(torch.float32).to(self.device))
+                label = valid_batch[1].to(self.device)
+                label = label.long()
 
-                loss_ecg = self.loss_model(outputs, labels)
-
-                proba = torch.softmax(outputs, dim=1)
+                loss_ecg = self.loss_model(output, label)
+                proba = torch.softmax(output, dim=1)
                 pred_labels = np.argmax(proba.cpu().detach().numpy(), axis=1)
 
-                acc = calculate_accuracy(pred_labels, labels)
+                acc = calculate_accuracy(pred_labels, label)
+                valid_accuracy.append(acc)
 
                 valid_loss.append(loss_ecg.item())
                 valid_acc.append(acc)
@@ -229,9 +211,8 @@ class PhysnetTrainer(BaseTrainer):
             print("Losses list for all valid batches, ", valid_loss)
             print("running_val_loss/len(dataloader['valid']), ", running_val_loss/len(data_loader['valid']))
             valid_loss = np.asarray(valid_loss)
-            valid_acc = np.asarray(valid_acc)
-
-        return np.mean(valid_loss), np.mean(valid_acc), val_true, val_scores
+            valid_accuracy = np.asarray(valid_accuracy)
+        return np.mean(valid_loss), np.mean(valid_accuracy)
 
     def test(self, data_loader):
         """ Runs the model on test sets."""
@@ -268,13 +249,14 @@ class PhysnetTrainer(BaseTrainer):
         test_true = []
         test_preds = []
         test_acc = []
+        test_filepaths=[]
         self.model.eval()
         print("Running model evaluation on the testing dataset!")
         with torch.no_grad():
             for _, test_batch in enumerate(tqdm(data_loader["test"], ncols=80)):
                 batch_size = test_batch[0].shape[0]
-                data, labels = test_batch[0].to(
-                    self.config.DEVICE), test_batch[1].to(self.config.DEVICE)
+                data, labels, file_path = test_batch[0].to(
+                    self.config.DEVICE), test_batch[1].to(self.config.DEVICE), test_batch[3]
                 labels = labels.long()
                 # pred_ppg_test, _, _, _ = self.model(data)
                 prediction = self.model(data)
@@ -283,11 +265,13 @@ class PhysnetTrainer(BaseTrainer):
                 acc = calculate_accuracy(pred_labels, labels)
                 test_acc.append(acc)
 
-                scores = proba[:, 1].cpu().detach().numpy()  # probability of positive class
+                scores = proba[:, 1].cpu().detach().numpy()
                 test_true.extend(labels.cpu().numpy())
                 test_scores.extend(scores)
 
                 test_preds.extend(pred_labels)
+
+                test_filepaths.extend(file_path)
 
                 if self.config.TEST.OUTPUT_SAVE_DIR:
                     labels = labels.cpu()
@@ -297,15 +281,6 @@ class PhysnetTrainer(BaseTrainer):
         fpr, tpr, thresholds = metrics.roc_curve(test_true, test_scores)
         test_roc_auc = metrics.auc(fpr, tpr)
 
-                # for idx in range(batch_size):
-                #     subj_index = test_batch[2][idx]
-                #     sort_index = int(test_batch[3][idx])
-                #     if subj_index not in predictions.keys():
-                #         predictions[subj_index] = dict()
-                #         labels[subj_index] = dict()
-                #     predictions[subj_index][sort_index] = pred_ppg_test[idx]
-                #     labels[subj_index][sort_index] = label[idx]
-            
         # confusion matrix
         cm = confusion_matrix(test_true, test_preds)
         classes = ['real', 'fake']
@@ -320,13 +295,18 @@ class PhysnetTrainer(BaseTrainer):
         # Save the plot to the specified directory
         figure_path = f'{output_dir}/{self.config.TRAIN.MODEL_FILE_NAME}_{self.config.TEST.DATA.DATASET}_confusion_matrix_test_set.png'
         plt.savefig(figure_path)
-        plt.close(fig)  # Close the figure to free memory
+        plt.close(fig)
         print('')
-        # calculate_metrics(predictions, labels, self.config)
+
+        misclassified_samples=get_missclassified_samples(test_preds, test_true, test_filepaths)
+        print("Misclassified samples, ", misclassified_samples)
+        save_misclassified_samples(misclassified_samples, self.config)
+        
+        #Save predictions
+        save_predictions(test_preds, test_true, test_filepaths, self.config.TRAIN.MODEL_FILE_NAME)
 
         # save for binary classification
-        if self.config.TEST.OUTPUT_SAVE_DIR: # saving test outputs 
-            # self.save_test_outputs(predictions, labels, self.config)
+        if self.config.TEST.OUTPUT_SAVE_DIR:
             # save
             print("Test accuracy, ", test_acc)
             print("Test roc, ", test_roc_auc)

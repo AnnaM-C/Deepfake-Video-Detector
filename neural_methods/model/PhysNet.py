@@ -1,6 +1,6 @@
 """ PhysNet
-We repulicate the net pipeline of the orginal paper, but set the input as diffnormalized data.
-orginal source:
+We adapt PhysNet for binary classification.
+Orginal source:
 Remote Photoplethysmograph Signal Measurement from Facial Videos Using Spatio-Temporal Networks
 British Machine Vision Conference (BMVC)} 2019,
 By Zitong Yu, 2019/05/05
@@ -95,7 +95,7 @@ class PhysNet_padding_Encoder_Decoder_MAX(nn.Module):
 
         # output of poolspa layer is [batch_size, 64, frames, 1, 1]
         # flatten to [batch_size, frames]
-        self.fc1 = nn.Linear(32, 16)
+        self.fc1 = nn.Linear(frames, 16)
         self.fc2 = nn.Linear(16, 2)
 
     def forward(self, x):  # Batch_size*[3, T, 128,128]

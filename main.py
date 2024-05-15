@@ -1,4 +1,5 @@
-""" The main function of rPPG deep learning pipeline."""
+""" Codebase refactored from Code Base by https://github.com/ubicomplab/rPPG-Toolbox."""
+""" You will need to change the paths linking to training/validation/testing splits text files on the following lines: 209, 210, 220, 224, 291, 299, 331, 332, 333 """
 
 import argparse
 import random
@@ -9,13 +10,18 @@ import torch
 from config import get_config
 from dataset import data_loader
 from neural_methods import trainer
+from neural_methods.trainer.PhysnetrppgTrainer import PhysnetrppgTrainer
 from neural_methods.trainer.ResNet3DTrainer import ResNet3DTrainer
+from neural_methods.trainer.XceptionNetTrainer import XceptionNetTrainer
+from neural_methods.trainer.Xception3DTrainer import Xception3DTrainer
 from unsupervised_methods.unsupervised_predictor import unsupervised_predict
 from torch.utils.data import DataLoader
+import dataset.data_loader.ImageDataLoader
 import dataset.data_loader.VideoFramesDataset
 from dataset.transforms import NormalizeVideo, ToTensorVideo, ToTensorVideoNoPermutation
 from torch.utils.tensorboard import SummaryWriter
-
+from datetime import datetime
+from neural_methods.trainer.MultiPhysNetModelTrainer import MultiPhysNetModelTrainer
 
 RANDOM_SEED = 100
 torch.manual_seed(RANDOM_SEED)
@@ -65,24 +71,36 @@ def add_args(parser):
     '''
     return parser
 
+def get_rPPG(config, data_loader_dict):
+    if config.MODEL.NAME == "Physnet":
+        model_trainer = PhysnetrppgTrainer(config, data_loader_dict)
+    else:
+        raise ValueError('Your Model is Not Supported  Yet!')
+    model_trainer.get_rPPG(data_loader_dict)
 
 def train_and_test(config, data_loader_dict):
-    # twriter = SummaryWriter(log_dir='Exp1/logs/NT_physnet_training_SGD_001')
-    # vwriter = SummaryWriter(log_dir='Exp1/logs/NT_physnet_training_SGD_001')
-
-    # iwriter = SummaryWriter(log_dir='Exp1/logs/videos_experiment')
 
     """Trains the model."""
     if config.MODEL.NAME == "Physnet":
         model_trainer = trainer.PhysnetTrainer.PhysnetTrainer(config, data_loader_dict)
-        twriter = SummaryWriter(log_dir=f'Exp1/logs/train/PhysNet/{config.TRAIN.MODEL_FILE_NAME}_training_SGD_{config.TRAIN.LR}_LR_reducer_full_dset')
-        vwriter = SummaryWriter(log_dir=f'Exp1/logs/train/PhysNet/{config.TRAIN.MODEL_FILE_NAME}_training_SGD_{config.TRAIN.LR}_LR_reducer_full_dset')
+        unique_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        writer = SummaryWriter(log_dir=f'Exp1/logs/output/PhysNet/{config.TRAIN.MODEL_FILE_NAME}_{unique_time}')
     elif config.MODEL.NAME == "ResNet3D":
         model_trainer = ResNet3DTrainer(config, data_loader_dict)
-        twriter = SummaryWriter(log_dir=f'Exp1/logs/train/ResNet3D/{config.TRAIN.MODEL_FILE_NAME}_training_SGD_{config.TRAIN.LR}_LR_reducer_full_dset')
-        vwriter = SummaryWriter(log_dir=f'Exp1/logs/train/ResNet3D/{config.TRAIN.MODEL_FILE_NAME}_training_SGD_{config.TRAIN.LR}_LR_reducer_full_dset')
-    elif config.MODEL.NAME == "Tscan":
-        model_trainer = trainer.TscanTrainer.TscanTrainer(config, data_loader_dict)
+        unique_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        writer = SummaryWriter(log_dir=f'Exp1/logs/output/ResNet3D/{config.TRAIN.MODEL_FILE_NAME}_{unique_time}')
+    elif config.MODEL.NAME == "Xception":
+        model_trainer = XceptionNetTrainer(config, data_loader_dict)
+        unique_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        writer = SummaryWriter(log_dir=f'Exp1/logs/output/XceptionNet/{config.TRAIN.MODEL_FILE_NAME}_{unique_time}')
+    elif config.MODEL.NAME == "Xception3D":
+        model_trainer = Xception3DTrainer(config, data_loader_dict)
+        unique_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        writer = SummaryWriter(log_dir=f'Exp1/logs/output/XceptionNet3D/{config.TRAIN.MODEL_FILE_NAME}_{unique_time}')
+    elif config.MODEL.NAME == "MultiPhysNetModel":
+        model_trainer = MultiPhysNetModelTrainer(config, data_loader_dict)
+        unique_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        writer = SummaryWriter(log_dir=f'Exp1/logs/output/MultiPhysNetModelTrainer/{config.TRAIN.MODEL_FILE_NAME}_{unique_time}')    
     elif config.MODEL.NAME == "EfficientPhys":
         model_trainer = trainer.EfficientPhysTrainer.EfficientPhysTrainer(config, data_loader_dict)
     elif config.MODEL.NAME == 'DeepPhys':
@@ -93,9 +111,7 @@ def train_and_test(config, data_loader_dict):
         model_trainer = trainer.PhysFormerTrainer.PhysFormerTrainer(config, data_loader_dict)
     else:
         raise ValueError('Your Model is Not Supported  Yet!')
-    model_trainer.train(data_loader_dict, twriter, vwriter)
-    # test on same DS
-    # model_trainer.test(data_loader_dict, twriter, vwriter)
+    model_trainer.train(data_loader_dict, writer)
     model_trainer.test(data_loader_dict)
 
 
@@ -103,14 +119,14 @@ def test(config, data_loader_dict):
     """Tests the model."""
     if config.MODEL.NAME == "Physnet":
         model_trainer = trainer.PhysnetTrainer.PhysnetTrainer(config, data_loader_dict)
-        # twriter = SummaryWriter(log_dir=f'Exp1/logs/test/PhysNet/{config.TEST.DATA.DATASET}_PhysNet_test_full_dset')
-        # vwriter = SummaryWriter(log_dir=f'Exp1/logs/test/PhysNet/{config.TEST.DATA.DATASET}_PhysNet_test_full_dset')
     elif config.MODEL.NAME == "ResNet3D":
-        model_trainer = trainer.ResNet3D.ResNet3D(config, data_loader_dict)
-        # twriter = SummaryWriter(log_dir=f'Exp1/logs/test/ResNet3D/{config.TEST.DATA.DATASET}_ResNet3D_test_full_dset')
-        # vwriter = SummaryWriter(log_dir=f'Exp1/logs/test/ResNet3D/{config.TEST.DATA.DATASET}_ResNet3D_test_full_dset')
-    elif config.MODEL.NAME == "Tscan":
-        model_trainer = trainer.TscanTrainer.TscanTrainer(config, data_loader_dict)
+        model_trainer = trainer.ResNet3DTrainer.ResNet3DTrainer(config, data_loader_dict)
+    elif config.MODEL.NAME == "Xception":
+        model_trainer = XceptionNetTrainer(config, data_loader_dict)
+    elif config.MODEL.NAME == "Xception3D":
+        model_trainer = trainer.Xception3DTrainer.Xception3DTrainer(config, data_loader_dict)
+    elif config.MODEL.NAME == "MultiPhysNetModel":
+        model_trainer = MultiPhysNetModelTrainer(config, data_loader_dict)
     elif config.MODEL.NAME == "EfficientPhys":
         model_trainer = trainer.EfficientPhysTrainer.EfficientPhysTrainer(config, data_loader_dict)
     elif config.MODEL.NAME == 'DeepPhys':
@@ -121,10 +137,8 @@ def test(config, data_loader_dict):
         model_trainer = trainer.PhysFormerTrainer.PhysFormerTrainer(config, data_loader_dict)
     else:
         raise ValueError('Your Model is Not Supported  Yet!')
-    # test on different ds
-    # model_trainer.test(data_loader_dict, twriter, vwriter)
-    model_trainer.test(data_loader_dict)
 
+    model_trainer.test(data_loader_dict)
 
 def get_files_from_splits(splits_file):
     video_files = []
@@ -143,15 +157,14 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
 
-    # configurations.
+    # configurations
     config = get_config(args)
     print('Configuration:')
     print(config, end='\n\n')
-
     data_loader_dict = dict() # dictionary of data loaders 
     
-    #transforms
-    if config.MODEL.NAME == "Physnet":
+    # transforms
+    if config.MODEL.NAME == "Physnet" or config.MODEL.NAME == "MultiPhysNetModel":
         print("Entered for transforming..")
         transform = transforms.Compose([
             transforms.Resize((128, 128)),
@@ -162,62 +175,46 @@ if __name__ == "__main__":
             transforms.Resize((224, 224)),
             ToTensorVideo(), # scales pixels from [0, 255] to [0, 1]
         ])
+    elif config.MODEL.NAME == "Xception":
+        transform = transforms.Compose([
+            transforms.Resize((256, 256)),
+            ToTensorVideo(), # scales pixels from [0, 255] to [0, 1]
+        ])
+    elif config.MODEL.NAME == "Xception3D":
+        transform = transforms.Compose([
+            transforms.Resize((256, 256)),
+            ToTensorVideo(), # scales pixels from [0, 255] to [0, 1]
+        ]) 
+    elif config.MODEL.NAME == "Physnetrppg":
+        transform = transforms.Compose([
+            transforms.Resize((128, 128)),
+            ToTensorVideo(),
+        ]) 
 
+    if (config.MODEL.NAME == "MultiPhysNetModel"):
+            # file contains 32 frames skipping 2: rPPG training labels - real
+            rPPG_train_path='rPPG_predictions/rppgpredictions_16frames_train_final.csv'
+            rPPG_valid_path='rPPG_predictions/rppgpredictions_16frames_valid_final.csv'
+            rPPG_test_path='rPPG_predictions/rppgpredictions_16frames_test_final.csv'
+    else:
+            rPPG_train_path=None
+            rPPG_valid_path=None
+            rPPG_test_path=None
+
+    # if config file is set to 'train_and_test' enter here to train and test the model called MODEL.name in config file
     if config.TOOLBOX_MODE == "train_and_test":
-        # train_loader
-        # if config.TRAIN.DATA.DATASET == "UBFC-rPPG":
-        #     train_loader = data_loader.UBFCrPPGLoader.UBFCrPPGLoader
-        # elif config.TRAIN.DATA.DATASET == "PURE":
-        #     train_loader = data_loader.PURELoader.PURELoader
-        # elif config.TRAIN.DATA.DATASET == "SCAMPS":
-        #     train_loader = data_loader.SCAMPSLoader.SCAMPSLoader
-        # elif config.TRAIN.DATA.DATASET == "MMPD":
-        #     train_loader = data_loader.MMPDLoader.MMPDLoader
-        # elif config.TRAIN.DATA.DATASET == "BP4DPlus":
-        #     train_loader = data_loader.BP4DPlusLoader.BP4DPlusLoader
-        # elif config.TRAIN.DATA.DATASET == "BP4DPlusBigSmall":
-        #     train_loader = data_loader.BP4DPlusBigSmallLoader.BP4DPlusBigSmallLoader
-        # elif config.TRAIN.DATA.DATASET == "UBFC-PHYS":
-        #     train_loader = data_loader.UBFCPHYSLoader.UBFCPHYSLoader
-        # else:
-        #     raise ValueError("Unsupported dataset! Currently supporting UBFC-rPPG, PURE, MMPD, \
-        #                      SCAMPS, BP4D+ (Normal and BigSmall preprocessing), and UBFC-PHYS.")
+        print("Entered train and test")
 
-        #NOTE: for one fake dataset
-        # train_loader = dataset.data_loader.VideoFramesDataset.VideoFramesDataset
-        # train_real_files = get_files_from_splits(f'/vol/research/DeepFakeDet/notebooks/FaceForensics++/original_sequences/youtube/c23/train.txt')
-        # train_fake_files = get_files_from_splits(f'/vol/research/DeepFakeDet/notebooks/FaceForensics++/manipulated_sequences/{config.TRAIN.DATA.DATASET}/c23/train.txt')
-
-        # valid_real_files = get_files_from_splits(f'/vol/research/DeepFakeDet/notebooks/FaceForensics++/original_sequences/youtube/c23/val.txt')
-        # valid_fake_files = get_files_from_splits(f'/vol/research/DeepFakeDet/notebooks/FaceForensics++/manipulated_sequences/{config.VALID.DATA.DATASET}/c23/val.txt')
-
-        # # Create and initialize the train dataloader given the correct toolbox mode,
-        # # a supported dataset name, and a valid dataset paths
-        # if (config.TRAIN.DATA.DATASET and config.TRAIN.DATA.DATA_PATH):
-
-        #     train_data_loader = train_loader(
-        #         train_real_files,
-        #         train_fake_files,
-        #         config,
-        #         frames_per_clip=32,
-        #         transform=transform,
-        #     )
-        #     data_loader_dict['train'] = DataLoader(train_data_loader, batch_size=6, shuffle=True, num_workers=8)
-        #     train_data_loader.save_clip_plots(idx=12, save_dir='Exp1/chunks/train', frames_to_show=5)
-        # else:
-        #     data_loader_dict['train'] = None
-
-        #NOTE: for multiple fake datasets
-        train_loader = dataset.data_loader.VideoFramesDataset.VideoFramesDataset
         train_real_files = get_files_from_splits(f'/vol/research/DeepFakeDet/notebooks/FaceForensics++/original_sequences/youtube/c23/train.txt')
         valid_real_files = get_files_from_splits(f'/vol/research/DeepFakeDet/notebooks/FaceForensics++/original_sequences/youtube/c23/val.txt')
-        
+
         train_dataset_names = config.TRAIN.DATA.DATASET.replace(" ", "").split(",")
         valid_dataset_names = config.VALID.DATA.DATASET.replace(" ", "").split(",")
 
         train_fake_dataset_file_paths = {}
         valid_fake_dataset_file_paths = {}
 
+        # get 'fake' video frame filepaths. put multiple datasets in a dictionary 
         for train_dataset in train_dataset_names:
             train_fake_files = get_files_from_splits(f'/vol/research/DeepFakeDet/notebooks/FaceForensics++/manipulated_sequences/{train_dataset}/c23/train.txt')
             train_fake_dataset_file_paths[train_dataset] = train_fake_files
@@ -229,160 +226,166 @@ if __name__ == "__main__":
         # Create and initialize the train dataloader given the correct toolbox mode,
         # a supported dataset name, and a valid dataset paths
         if (config.TRAIN.DATA.DATASET and config.TRAIN.DATA.DATA_PATH):
+            print("--- Loading training data ---")
+            if config.MODEL.NAME == "Xception":
+                train_loader = dataset.data_loader.ImageDataLoader.ImageDataLoader
+                train_data_loader = train_loader(
+                    train_real_files,
+                    train_fake_dataset_file_paths,
+                    transform=transform,
+                    max_frames_per_video=270,
+                )
+                train_data_loader.plot_image(idx=110, save_dir='Exp1/images/train')
+            else:
+                train_loader = dataset.data_loader.VideoFramesDataset.VideoFramesDataset
+                train_data_loader = train_loader(
+                    train_real_files,
+                    train_fake_dataset_file_paths,
+                    config,
+                    train_dataset_names,
+                    frames_per_clip=config.TRAIN.DATA.PREPROCESS.CHUNK_LENGTH,
+                    transform=transform,
+                    max_frames_per_video=270,
+                    rPPG_csv_path=rPPG_train_path
+                )
+                print("Train video dataloader len inside main.py, ", len(train_data_loader))
+                train_data_loader.save_clip_plots(idx=1, save_dir='Exp1/chunks/train', frames_to_show=5)
 
-            train_data_loader = train_loader(
-                train_real_files,
-                train_fake_dataset_file_paths,
-                config,
-                train_dataset_names,
-                frames_per_clip=32,
-                transform=transform,
-            )
-            data_loader_dict['train'] = DataLoader(train_data_loader, batch_size=6, shuffle=True, num_workers=8)
-            train_data_loader.save_clip_plots(idx=12, save_dir='Exp1/chunks/train', frames_to_show=5)
+            data_loader_dict['train'] = DataLoader(train_data_loader, batch_size=config.TRAIN.BATCH_SIZE, shuffle=True, num_workers=8)
         else:
             data_loader_dict['train'] = None
 
-
-        # valid_loader
-        # if config.VALID.DATA.DATASET == "UBFC-rPPG":
-        #     valid_loader = data_loader.UBFCrPPGLoader.UBFCrPPGLoader
-        # elif config.VALID.DATA.DATASET == "PURE":
-        #     valid_loader = data_loader.PURELoader.PURELoader
-        # elif config.VALID.DATA.DATASET == "SCAMPS":
-        #     valid_loader = data_loader.SCAMPSLoader.SCAMPSLoader
-        # elif config.VALID.DATA.DATASET == "MMPD":
-        #     valid_loader = data_loader.MMPDLoader.MMPDLoader
-        # elif config.VALID.DATA.DATASET == "BP4DPlus":
-        #     valid_loader = data_loader.BP4DPlusLoader.BP4DPlusLoader
-        # elif config.VALID.DATA.DATASET == "BP4DPlusBigSmall":
-        #     valid_loader = data_loader.BP4DPlusBigSmallLoader.BP4DPlusBigSmallLoader
-        # elif config.VALID.DATA.DATASET == "UBFC-PHYS":
-        #     valid_loader = data_loader.UBFCPHYSLoader.UBFCPHYSLoader
-        # elif config.VALID.DATA.DATASET is None and not config.TEST.USE_LAST_EPOCH:
-        #     raise ValueError("Validation dataset not specified despite USE_LAST_EPOCH set to False!")
-        # else:
-        #     raise ValueError("Unsupported dataset! Currently supporting UBFC-rPPG, PURE, MMPD, \
-        #                      SCAMPS, BP4D+ (Normal and BigSmall preprocessing), and UBFC-PHYS.")
-        
-        # Create and initialize the valid dataloader given the correct toolbox mode,
-        # a supported dataset name, and a valid dataset path
-        # if (config.VALID.DATA.DATASET and config.VALID.DATA.DATA_PATH and not config.TEST.USE_LAST_EPOCH):
-            
-        #NOTE: single dataset
-        # valid_loader = dataset.data_loader.VideoFramesDataset.VideoFramesDataset
-
-        # if (not config.TEST.USE_LAST_EPOCH):
-
-        #     valid_dataset = valid_loader(
-        #         valid_real_files,
-        #         valid_fake_files,
-        #         config,
-        #         frames_per_clip=32,
-        #         transform=transform,
-        #     )
-            
-        #     data_loader_dict["valid"] = DataLoader(valid_dataset, batch_size=6, shuffle=False, num_workers=8)
-        #     valid_dataset.save_clip_plots(idx=12, save_dir='Exp1/chunks/valid', frames_to_show=5)
-        # else:
-        #     data_loader_dict['valid'] = None
-            
-        #NOTE: multiple datasets
-        valid_loader = dataset.data_loader.VideoFramesDataset.VideoFramesDataset
-
+        print("--- Loading validation data ---")
         if (not config.TEST.USE_LAST_EPOCH):
-
-            valid_dataset = valid_loader(
-                valid_real_files,
-                valid_fake_dataset_file_paths,
-                config,
-                valid_dataset_names,
-                frames_per_clip=32,
-                transform=transform,
-            )
+            if config.MODEL.NAME == "Xception":
+                valid_loader = dataset.data_loader.ImageDataLoader.ImageDataLoader
+                valid_dataset = valid_loader(
+                    valid_real_files,
+                    valid_fake_dataset_file_paths,
+                    transform=transform,
+                    max_frames_per_video=110
+                )
+                valid_dataset.plot_image(idx=110, save_dir='Exp1/images/valid')
+            else:
+                valid_loader = dataset.data_loader.VideoFramesDataset.VideoFramesDataset
+                valid_dataset = valid_loader(
+                    valid_real_files,
+                    valid_fake_dataset_file_paths,
+                    config,
+                    valid_dataset_names,
+                    frames_per_clip=config.VALID.DATA.PREPROCESS.CHUNK_LENGTH,
+                    transform=transform,
+                    max_frames_per_video=110,
+                    rPPG_csv_path=rPPG_valid_path
+                )
+                valid_dataset.save_clip_plots(idx=1, save_dir='Exp1/chunks/valid', frames_to_show=5)
             
-            data_loader_dict["valid"] = DataLoader(valid_dataset, batch_size=6, shuffle=False, num_workers=8)
-            valid_dataset.save_clip_plots(idx=12, save_dir='Exp1/chunks/valid', frames_to_show=5)
+            data_loader_dict["valid"] = DataLoader(valid_dataset, batch_size=config.TRAIN.BATCH_SIZE, shuffle=False, num_workers=8)
         else:
             data_loader_dict['valid'] = None
             
 
+    # if config file is set to 'train_and_test' or 'only_test' enter here the model will be tested on the model path set in the config file as MODEL_PATH
     if config.TOOLBOX_MODE == "train_and_test" or config.TOOLBOX_MODE == "only_test":
 
         test_real_files = get_files_from_splits(f'/vol/research/DeepFakeDet/notebooks/FaceForensics++/original_sequences/youtube/c23/test.txt')
-        # test_fake_files = get_files_from_splits(f'/vol/research/DeepFakeDet/notebooks/FaceForensics++/manipulated_sequences/{config.TEST.DATA.DATASET}/c23/test.txt')
-        # test_loader
-        test_loader = dataset.data_loader.VideoFramesDataset.VideoFramesDataset
 
-        # NOTE: for multiple ds
+        # configured for multiple datasets
         test_dataset_names = config.TEST.DATA.DATASET.replace(" ", "").split(",")
 
         test_fake_dataset_file_paths = {}
-        # NOTE: for multiple ds
+        # configured for multiple datasets
         for test_dataset in test_dataset_names:
-            test_fake_files = get_files_from_splits(f'/vol/research/DeepFakeDet/notebooks/FaceForensics++/manipulated_sequences/{test_dataset}/c23/val.txt')
+            test_fake_files = get_files_from_splits(f'/vol/research/DeepFakeDet/notebooks/FaceForensics++/manipulated_sequences/{test_dataset}/c23/test.txt')
             test_fake_dataset_file_paths[test_dataset] = test_fake_files
+            
+        print("--- Loading testing data ---")
+        if config.MODEL.NAME == "Xception":
+            test_loader = dataset.data_loader.ImageDataLoader.ImageDataLoader
+            test_data_loader = test_loader(
+                    test_real_files,
+                    test_fake_dataset_file_paths,
+                    transform=transform,
+                    max_frames_per_video=110
+                )
+            test_data_loader.plot_image(idx=110, save_dir='Exp1/images/test')
+        else:
+            test_loader = dataset.data_loader.VideoFramesDataset.VideoFramesDataset
+            test_data_loader = test_loader(
+                    test_real_files,
+                    test_fake_dataset_file_paths,
+                    config,
+                    test_dataset_names,
+                    frames_per_clip=config.TEST.DATA.PREPROCESS.CHUNK_LENGTH,
+                    transform=transform,
+                    max_frames_per_video=110,
+                    rPPG_csv_path=rPPG_test_path
 
+                )
+            test_data_loader.save_clip_plots(idx=1, save_dir='Exp1/chunks/test', frames_to_show=5)
+        data_loader_dict['test'] = DataLoader(test_data_loader, batch_size=config.TRAIN.BATCH_SIZE, shuffle=False, num_workers=8)
+
+    # if config file is set to 'get_rPPG' PhysNet will be inferenced to obtain rPPG values of real videossaved to text files in rPPG_predictions
+    if config.TOOLBOX_MODE == "get_rPPG":
+
+        train_real_files = get_files_from_splits(f'/vol/research/DeepFakeDet/notebooks/FaceForensics++/original_sequences/youtube/c23/train.txt')
+        valid_real_files = get_files_from_splits(f'/vol/research/DeepFakeDet/notebooks/FaceForensics++/original_sequences/youtube/c23/val.txt')
+        test_real_files = get_files_from_splits(f'/vol/research/DeepFakeDet/notebooks/FaceForensics++/original_sequences/youtube/c23/test.txt')
+        train_fake_dataset_file_paths={}
+        valid_fake_dataset_file_paths={}
+        test_fake_dataset_file_paths={}
+        train_dataset_names=[]
+        valid_dataset_names=[]
+        test_dataset_names=[]
+
+        train_loader = dataset.data_loader.VideoFramesDataset.VideoFramesDataset
+        train_data_loader = train_loader(
+            train_real_files,
+            train_fake_dataset_file_paths,
+            config,
+            train_dataset_names,
+            frames_per_clip=config.MODEL.PHYSNET.FRAME_NUM,
+            transform=transform,
+            max_frames_per_video=270
+        )
+        print("Train: save a clip plot")
+        train_data_loader.save_clip_plots(idx=1, save_dir='Exp1/chunks/train/rPPG', frames_to_show=5)
+        data_loader_dict['train'] = DataLoader(train_data_loader, batch_size=config.INFERENCE.BATCH_SIZE, shuffle=True, num_workers=8)
+        print("Train dataloader length, ", len(train_data_loader))
+
+
+        valid_loader = dataset.data_loader.VideoFramesDataset.VideoFramesDataset
+        valid_dataset = valid_loader(
+            valid_real_files,
+            valid_fake_dataset_file_paths,
+            config,
+            valid_dataset_names,
+            frames_per_clip=config.MODEL.PHYSNET.FRAME_NUM,
+            transform=transform,
+            max_frames_per_video=110
+        )
+        print("Valid: save a clip plot")
+        valid_dataset.save_clip_plots(idx=1, save_dir='Exp1/chunks/valid/rPPG', frames_to_show=5)
+        data_loader_dict["valid"] = DataLoader(valid_dataset, batch_size=config.INFERENCE.BATCH_SIZE, shuffle=False, num_workers=8)
+
+        test_loader = dataset.data_loader.VideoFramesDataset.VideoFramesDataset
         test_data_loader = test_loader(
                 test_real_files,
                 test_fake_dataset_file_paths,
                 config,
                 test_dataset_names,
-                frames_per_clip=32,
+                frames_per_clip=config.MODEL.PHYSNET.FRAME_NUM,
                 transform=transform,
+                max_frames_per_video=110
             )
-        data_loader_dict['test'] = DataLoader(test_data_loader, batch_size=6, shuffle=False, num_workers=8)
-        test_data_loader.save_clip_plots(idx=12, save_dir='Exp1/chunks/test', frames_to_show=5)
-
-
-        # if config.TEST.DATA.DATASET == "UBFC-rPPG":
-        #     test_loader = data_loader.UBFCrPPGLoader.UBFCrPPGLoader
-        # elif config.TEST.DATA.DATASET == "PURE":
-        #     test_loader = data_loader.PURELoader.PURELoader
-        # elif config.TEST.DATA.DATASET == "SCAMPS":
-        #     test_loader = data_loader.SCAMPSLoader.SCAMPSLoader
-        # elif config.TEST.DATA.DATASET == "MMPD":
-        #     test_loader = data_loader.MMPDLoader.MMPDLoader
-        # elif config.TEST.DATA.DATASET == "BP4DPlus":
-        #     test_loader = data_loader.BP4DPlusLoader.BP4DPlusLoader
-        # elif config.TEST.DATA.DATASET == "BP4DPlusBigSmall":
-        #     test_loader = data_loader.BP4DPlusBigSmallLoader.BP4DPlusBigSmallLoader
-        # elif config.TEST.DATA.DATASET == "UBFC-PHYS":
-        #     test_loader = data_loader.UBFCPHYSLoader.UBFCPHYSLoader
-        # else:
-        #     raise ValueError("Unsupported dataset! Currently supporting UBFC-rPPG, PURE, MMPD, \
-        #                      SCAMPS, BP4D+ (Normal and BigSmall preprocessing), and UBFC-PHYS.")
-        
-    #     if config.TOOLBOX_MODE == "train_and_test" and config.TEST.USE_LAST_EPOCH:
-    #         print("Testing uses last epoch, validation dataset is not required.", end='\n\n')   
-
-    #     # Create and initialize the test dataloader given the correct toolbox mode,
-    #     # a supported dataset name, and a valid dataset path
-    #     if config.TEST.DATA.DATASET and config.TEST.DATA.DATA_PATH:
-    #         test_data = test_loader(
-    #             name="test",
-    #             data_path=config.TEST.DATA.DATA_PATH,
-    #             config_data=config.TEST.DATA)
-    #         data_loader_dict["test"] = DataLoader(
-    #             dataset=test_data,
-    #             num_workers=16,
-    #             batch_size=config.INFERENCE.BATCH_SIZE,
-    #             shuffle=False,
-    #             worker_init_fn=seed_worker,
-    #             generator=general_generator
-    #         )
-    #     else:
-    #         data_loader_dict['test'] = None
-
-    
-    
-
-    else:
-        raise ValueError("Unsupported toolbox_mode! Currently support train_and_test or only_test or unsupervised_method.")
+        test_data_loader.save_clip_plots(idx=1, save_dir='Exp1/chunks/test/rPPG', frames_to_show=5)
+        data_loader_dict['test'] = DataLoader(test_data_loader, batch_size=config.INFERENCE.BATCH_SIZE, shuffle=False, num_workers=8)
 
     if config.TOOLBOX_MODE == "train_and_test":
         train_and_test(config, data_loader_dict)
     elif config.TOOLBOX_MODE == "only_test":
         test(config, data_loader_dict)
+    elif config.TOOLBOX_MODE == "get_rPPG":
+        get_rPPG(config, data_loader_dict)
     else:
         print("TOOLBOX_MODE only support train_and_test or only_test !", end='\n\n')

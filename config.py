@@ -288,6 +288,10 @@ _C.MODEL.MODEL_DIR = 'PreTrainedModels'
 _C.MODEL.PHYSNET = CN()
 _C.MODEL.PHYSNET.FRAME_NUM = 64
 
+# Specific parameters for resnet3d parameters
+_C.MODEL.RESNET3D = CN()
+_C.MODEL.RESNET3D.FRAME_NUM = 5
+
 # -----------------------------------------------------------------------------
 # Model Settings for TS-CAN
 # -----------------------------------------------------------------------------
@@ -338,7 +342,7 @@ _C.NUM_OF_GPU_TRAIN = 1
 # Log settings
 # -----------------------------------------------------------------------------
 _C.LOG = CN()
-_C.LOG.PATH = "runs/exp"
+_C.LOG.PATH = "runs/exp/logs"
 
 
 def _update_config_from_file(config, cfg_file):
@@ -548,16 +552,16 @@ def update_config(config, args):
 
     # Establish the directory to hold pre-trained models from a given experiment inside 
     # the configured log directory (runs/exp by default)
-    config.MODEL.MODEL_DIR = os.path.join(config.LOG.PATH, config.TRAIN.DATA.EXP_DATA_NAME, config.MODEL.MODEL_DIR)
+    config.MODEL.MODEL_DIR = os.path.join(config.LOG.PATH, config.TRAIN.MODEL_FILE_NAME, config.MODEL.MODEL_DIR)
 
     # Establish the directory to hold outputs saved during testing inside the
     # configured log directory (runs/exp by default)
-    if config.TOOLBOX_MODE == 'train_and_test' or config.TOOLBOX_MODE == 'only_test':
-        config.TEST.OUTPUT_SAVE_DIR = os.path.join(config.LOG.PATH, config.TEST.DATA.EXP_DATA_NAME, 'saved_test_outputs')
+    if config.TOOLBOX_MODE == 'train_and_test' or config.TOOLBOX_MODE == 'only_test' or config.TOOLBOX_MODE == 'get_rPPG':
+        config.TEST.OUTPUT_SAVE_DIR = os.path.join(config.LOG.PATH, config.TRAIN.MODEL_FILE_NAME, config.TEST.DATA.DATASET, 'saved_test_outputs')
     elif config.TOOLBOX_MODE == 'unsupervised_method':
         config.UNSUPERVISED.OUTPUT_SAVE_DIR = os.path.join(config.LOG.PATH, config.UNSUPERVISED.DATA.EXP_DATA_NAME, 'saved_outputs')
     else:
-        raise ValueError('TOOLBOX_MODE only supports train_and_test, only_test, or unsupervised_method!')
+        raise ValueError('TOOLBOX_MODE only supports train_and_test, only_test, get_rPPG or unsupervised_method!')
 
     config.freeze()
     return
